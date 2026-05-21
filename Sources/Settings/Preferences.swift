@@ -1,6 +1,23 @@
 import Foundation
 import Combine
 
+/// The app-wide color theme the user has chosen in Settings.
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+}
+
 /// User preferences, backed by `UserDefaults`. A single shared instance is
 /// observed by the settings UI and read by the clipboard monitor.
 /// See ARCHITECTURE.md §12.
@@ -31,6 +48,9 @@ final class Preferences: ObservableObject {
             }
         }
     }
+    @Published var appearance: AppAppearance {
+        didSet { defaults.set(appearance.rawValue, forKey: Key.appearance) }
+    }
 
     /// The capture size limit in bytes (the stored value is in megabytes).
     var maxCaptureBytes: Int { maxCaptureMegabytes * 1024 * 1024 }
@@ -48,6 +68,8 @@ final class Preferences: ObservableObject {
             (defaults.object(forKey: Key.maxCaptureMegabytes) as? Int) ?? 10
         excludedBundleIDs = defaults.stringArray(forKey: Key.excludedBundleIDs) ?? []
         pausedUntil = defaults.object(forKey: Key.pausedUntil) as? Date
+        appearance = defaults.string(forKey: Key.appearance)
+            .flatMap(AppAppearance.init(rawValue:)) ?? .system
     }
 
     private enum Key {
@@ -57,5 +79,6 @@ final class Preferences: ObservableObject {
         static let maxCaptureMegabytes = "maxCaptureMegabytes"
         static let excludedBundleIDs = "excludedBundleIDs"
         static let pausedUntil = "pausedUntil"
+        static let appearance = "appearance"
     }
 }

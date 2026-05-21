@@ -109,6 +109,12 @@ private struct GeneralSettingsTab: View {
                 get: { LoginItemManager.isEnabled },
                 set: { LoginItemManager.setEnabled($0) }
             ))
+            Picker("Appearance", selection: $preferences.appearance) {
+                ForEach(AppAppearance.allCases) { appearance in
+                    Text(appearance.title).tag(appearance)
+                }
+            }
+            .pickerStyle(.segmented)
             Stepper(
                 "History limit: \(preferences.maxItems) items",
                 value: $preferences.maxItems,

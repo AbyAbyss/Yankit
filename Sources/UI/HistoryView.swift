@@ -18,7 +18,7 @@ struct HistoryView: View {
             content
         }
         .frame(width: 420, height: 520)
-        .background(.regularMaterial)
+        .background(VisualEffectBackground(material: .hudWindow, cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .onAppear {
             DispatchQueue.main.async { searchFocused = true }
@@ -83,5 +83,31 @@ struct HistoryView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Bridges `NSVisualEffectView` into SwiftUI. SwiftUI's `Material` blurs
+/// look milky; an `NSVisualEffectView` with behind-window blending gives
+/// the panel the deeper, glassier translucency of Spotlight.
+private struct VisualEffectBackground: NSViewRepresentable {
+    var material: NSVisualEffectView.Material
+    var cornerRadius: CGFloat
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = .behindWindow
+        // .active keeps the glass on even though the panel is a
+        // non-activating panel that never becomes the main window.
+        view.state = .active
+        view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.masksToBounds = true
+        return view
+    }
+
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {
+        view.material = material
+        view.layer?.cornerRadius = cornerRadius
     }
 }
