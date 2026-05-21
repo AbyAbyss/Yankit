@@ -1,4 +1,4 @@
-# ipaste — Architecture & Implementation Plan
+# Yankit — Architecture & Implementation Plan
 
 A free, open-source clipboard manager for macOS. Lives in the menu bar, remembers
 the last ~30 things you copied (text, images, files), and lets you paste any of
@@ -109,7 +109,7 @@ The app is a single process. The only always-on cost is a low-frequency timer
 ### 4.1 On-disk layout
 
 ```
-~/Library/Application Support/ipaste/
+~/Library/Application Support/Yankit/
   history.sqlite          ← text + all metadata
   blobs/
     <uuid>.png            ← image payloads (clipboard images, full size)
@@ -120,7 +120,7 @@ Text lives inside SQLite (small, queryable). Image bytes live as files,
 referenced by path — this keeps the database file small and fast, and makes
 eviction a simple "delete row + delete file".
 
-The `ipaste` directory is created with `0700` permissions and the database file
+The `Yankit` directory is created with `0700` permissions and the database file
 with `0600`, and the whole directory is marked `isExcludedFromBackup` and
 excluded from Spotlight indexing — so clipboard history is not silently copied
 into Time Machine snapshots or search indexes.
@@ -168,11 +168,13 @@ users' history survives upgrades.
 - **Text** — `text_content` holds the full string; `preview_text` holds a
   truncated snippet so the list never loads large strings. RTF, if present, is
   not stored in v1 (plain text only — simplest correct choice).
-- **Image** — clipboard images have no source file. The PNG bytes are written
-  to `blobs/<uuid>.png`, a 128px `thumb.png` is generated, and only the paths +
-  dimensions go in the row.
+- **Image** — clipboard images have no source file. The original pasteboard
+  image bytes (PNG, or TIFF when that is all that is offered) are written
+  **verbatim** to `blobs/` — re-encoding through `NSBitmapImageRep` shifts
+  colors on wide-gamut images. A 128px thumbnail is generated separately, and
+  only the paths + dimensions go in the row.
 - **File** — when you copy files in Finder, the pasteboard carries *file URLs*,
-  not bytes. ipaste stores the **URL reference** plus the file name. It does
+  not bytes. Yankit stores the **URL reference** plus the file name. It does
   **not** copy the file's bytes (a copied 4 GB video must not bloat `blobs/`).
   Trade-off: if you later move or delete that file, the history item becomes
   stale. This is the standard behavior for clipboard managers and is called out
@@ -276,7 +278,7 @@ Three surfaces, all SwiftUI hosted in AppKit windows.
 
 ### 8.1 Menu bar — `MenuBarController`
 
-An `NSStatusItem` with the ipaste icon. **Left-click** opens the history panel.
+An `NSStatusItem` with the Yankit icon. **Left-click** opens the history panel.
 **Right-click** opens a small menu:
 
 - *Open History (⌘⇧V)*
@@ -352,12 +354,12 @@ and the Settings recorder lets the user change it. Pressing it shows
 ```
 
 Step 5 needs the **Accessibility** permission (`AXIsProcessTrusted`). If the
-user has not granted it, ipaste **degrades gracefully**: the item is placed on
+user has not granted it, Yankit **degrades gracefully**: the item is placed on
 the clipboard and a one-time hint explains that the user can press `⌘V` manually,
 or enable Accessibility for one-touch paste. The app is fully usable either way.
 
 > **Known shortcut conflict — surfacing the trade-off.** `⌘⇧V` is macOS's
-> standard *Paste and Match Style*. While ipaste runs, a global `⌘⇧V` overrides
+> standard *Paste and Match Style*. While Yankit runs, a global `⌘⇧V` overrides
 > that in every app. This is the explicitly requested default, but because the
 > shortcut is rebindable, anyone who relies on Paste-and-Match-Style can change
 > it in Settings. Flagging it so the choice is deliberate, not accidental.
@@ -375,7 +377,7 @@ or enable Accessibility for one-touch paste. The app is fully usable either way.
 | Read copied file URLs      | None when unsandboxed | — |
 
 **Sandboxing.** A clipboard manager that synthesizes keystrokes and references
-arbitrary copied file paths cannot work well inside the App Sandbox. ipaste ships
+arbitrary copied file paths cannot work well inside the App Sandbox. Yankit ships
 **unsandboxed**, which also means **not via the Mac App Store**.
 
 **Distribution.** Recommended path: a **notarized `.dmg`** attached to GitHub
@@ -389,12 +391,12 @@ decision left to you in §14.
 ## 11. Project structure
 
 ```
-ipaste/
-  ipaste.xcodeproj
+Yankit/
+  Yankit.xcodeproj
   Package.resolved              ← SPM: GRDB.swift, KeyboardShortcuts
   Sources/
     App/
-      ipasteApp.swift           ← @main, App scene wiring
+      YankitApp.swift           ← @main, App scene wiring
       AppDelegate.swift         ← lifecycle, starts monitor + menu bar
     Clipboard/
       ClipboardItem.swift       ← model (Codable, GRDB record)

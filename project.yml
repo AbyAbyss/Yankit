@@ -1,7 +1,7 @@
-name: ipaste
+name: Yankit
 
 options:
-  bundleIdPrefix: com.ipaste
+  bundleIdPrefix: com.yankit
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -15,7 +15,7 @@ packages:
     from: "2.0.0"
 
 targets:
-  ipaste:
+  Yankit:
     type: application
     platform: macOS
     sources:
@@ -26,7 +26,7 @@ targets:
       - package: KeyboardShortcuts
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ipaste.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.yankit.app
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
@@ -34,29 +34,29 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.9"
 
-  ipasteTests:
+  YankitTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - Tests
     dependencies:
-      - target: ipaste
+      - target: Yankit
       - package: GRDB
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.ipaste.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.yankit.app.tests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "5.9"
 
 schemes:
-  ipaste:
+  Yankit:
     build:
       targets:
-        ipaste: all
-        ipasteTests: [test]
+        Yankit: all
+        YankitTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - ipasteTests
+        - YankitTests

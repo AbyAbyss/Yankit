@@ -91,7 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.hotkeyManager = hotkeyManager
             self.maintenanceService = maintenance
         } catch {
-            NSLog("ipaste: failed to start: \(error)")
+            NSLog("Yankit: failed to start: \(error)")
         }
     }
 }

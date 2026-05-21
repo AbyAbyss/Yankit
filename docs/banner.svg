@@ -1,0 +1,83 @@
+<svg width="1200" height="340" viewBox="0 0 1200 340" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16182F"/>
+      <stop offset="1" stop-color="#0A0B15"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7C8DF6"/>
+      <stop offset="1" stop-color="#3A5AD4"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#AEB8FF"/>
+    </linearGradient>
+    <filter id="soft" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="70"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="340" fill="url(#bg)"/>
+  <circle cx="235" cy="34" r="150" fill="#5B7FF0" opacity="0.26" filter="url(#soft)"/>
+  <circle cx="1025" cy="322" r="170" fill="#8A5BF0" opacity="0.20" filter="url(#soft)"/>
+
+  <!-- app icon -->
+  <g transform="translate(84,92)">
+    <rect width="132" height="132" rx="30" fill="url(#iconGrad)"/>
+    <rect x="40" y="38" width="52" height="64" rx="9" fill="#FFFFFF"/>
+    <rect x="53" y="31" width="26" height="14" rx="5" fill="#BCC6E2"/>
+    <rect x="50" y="58" width="33" height="6" rx="3" fill="#AEB9DB"/>
+    <rect x="50" y="72" width="23" height="6" rx="3" fill="#AEB9DB"/>
+    <rect x="50" y="86" width="28" height="6" rx="3" fill="#AEB9DB"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="250" y="162" font-size="86" font-weight="800" letter-spacing="-2.5" fill="url(#word)">Yankit</text>
+
+  <!-- tagline -->
+  <text x="253" y="202" font-size="22" font-weight="500" fill="#9197BC">A fast, free clipboard manager for macOS.</text>
+
+  <!-- shortcut keycaps -->
+  <g transform="translate(253,222)">
+    <g>
+      <rect width="32" height="32" rx="8" fill="#FFFFFF" fill-opacity="0.07"/>
+      <rect width="32" height="32" rx="8" fill="none" stroke="#FFFFFF" stroke-opacity="0.14"/>
+      <text x="16" y="22" font-size="15" font-weight="600" fill="#C8CEEA" text-anchor="middle">&#8984;</text>
+    </g>
+    <g transform="translate(40,0)">
+      <rect width="32" height="32" rx="8" fill="#FFFFFF" fill-opacity="0.07"/>
+      <rect width="32" height="32" rx="8" fill="none" stroke="#FFFFFF" stroke-opacity="0.14"/>
+      <text x="16" y="22" font-size="15" font-weight="600" fill="#C8CEEA" text-anchor="middle">&#8679;</text>
+    </g>
+    <g transform="translate(80,0)">
+      <rect width="32" height="32" rx="8" fill="#FFFFFF" fill-opacity="0.07"/>
+      <rect width="32" height="32" rx="8" fill="none" stroke="#FFFFFF" stroke-opacity="0.14"/>
+      <text x="16" y="22" font-size="15" font-weight="700" fill="#C8CEEA" text-anchor="middle">V</text>
+    </g>
+    <text x="130" y="22" font-size="15" font-weight="500" fill="#787FA6">opens your clipboard history</text>
+  </g>
+
+  <!-- mini history panel -->
+  <g transform="translate(812,58)">
+    <rect width="324" height="224" rx="18" fill="#1B1E39"/>
+    <rect width="324" height="224" rx="18" fill="none" stroke="#FFFFFF" stroke-opacity="0.09"/>
+
+    <circle cx="30" cy="33" r="7.5" fill="none" stroke="#5B639B" stroke-width="2.5"/>
+    <line x1="35.5" y1="38.5" x2="42" y2="45" stroke="#5B639B" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="52" y="26" width="150" height="9" rx="4.5" fill="#FFFFFF" fill-opacity="0.10"/>
+    <line x1="0" y1="58" x2="324" y2="58" stroke="#FFFFFF" stroke-opacity="0.07"/>
+
+    <rect x="10" y="68" width="304" height="46" rx="10" fill="#5B7FF0" fill-opacity="0.20"/>
+    <rect x="22" y="79" width="24" height="24" rx="6" fill="#6E81E8"/>
+    <rect x="58" y="83" width="156" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.58"/>
+    <rect x="58" y="97" width="98" height="6" rx="3" fill="#FFFFFF" fill-opacity="0.24"/>
+
+    <rect x="22" y="129" width="24" height="24" rx="6" fill="#36B98A"/>
+    <rect x="58" y="133" width="128" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.42"/>
+    <rect x="58" y="147" width="74" height="6" rx="3" fill="#FFFFFF" fill-opacity="0.20"/>
+
+    <rect x="22" y="177" width="24" height="24" rx="6" fill="#E0A23E"/>
+    <rect x="58" y="181" width="140" height="7" rx="3.5" fill="#FFFFFF" fill-opacity="0.42"/>
+    <rect x="58" y="195" width="62" height="6" rx="3" fill="#FFFFFF" fill-opacity="0.20"/>
+  </g>
+</svg>

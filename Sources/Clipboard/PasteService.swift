@@ -48,7 +48,11 @@ final class PasteService {
         case .image:
             if let path = item.blobPath,
                let data = try? blobStore.data(forRelativePath: path) {
-                pasteboard.setData(data, forType: .png)
+                // Write back under the type the blob was stored as, so the
+                // image round-trips byte-for-byte.
+                let type: NSPasteboard.PasteboardType =
+                    path.hasSuffix(".tiff") ? .tiff : .png
+                pasteboard.setData(data, forType: type)
             }
         case .file:
             if let urlString = item.fileURL,
@@ -90,7 +94,7 @@ final class PasteService {
         alert.informativeText = """
             Your selection is on the clipboard — press ⌘V to paste it.
 
-            To let ipaste paste automatically, allow it under System \
+            To let Yankit paste automatically, allow it under System \
             Settings → Privacy & Security → Accessibility.
             """
         alert.addButton(withTitle: "Open Settings")

@@ -1,13 +1,9 @@
 import AppKit
 
-/// Image helpers for clipboard capture: PNG encoding and thumbnail
-/// generation. See ARCHITECTURE.md §4.3.
+/// Image helpers for clipboard capture. Only the list thumbnail is derived
+/// from a bitmap; full image payloads are stored verbatim (see
+/// `ClipboardMonitor.captureImage`). See ARCHITECTURE.md §4.3.
 enum ImageProcessing {
-    /// Full-resolution PNG encoding of a bitmap.
-    static func pngData(from rep: NSBitmapImageRep) -> Data? {
-        rep.representation(using: .png, properties: [:])
-    }
-
     /// A downscaled PNG no larger than `maxDimension` on its longer edge,
     /// used as the history list thumbnail. Returns nil if the bitmap is empty.
     static func thumbnailPNGData(

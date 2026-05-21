@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>ipaste</string>
+	<string>Yankit</string>
 	<key>CFBundleDisplayName</key>
-	<string>ipaste</string>
+	<string>Yankit</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleExecutable</key>

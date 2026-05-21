@@ -75,8 +75,8 @@ final class ClipboardMonitor {
         // Priority: file URLs, then image, then text (ARCHITECTURE.md §6).
         if let fileURLs = readFileURLs() {
             for url in fileURLs { captureFile(url, source: source) }
-        } else if let imageRep = readImageRep() {
-            captureImage(imageRep, source: source)
+        } else if hasImage() {
+            captureImage(source: source)
         } else if let text = readText() {
             captureText(text, source: source)
         }
@@ -112,33 +112,54 @@ final class ClipboardMonitor {
         store(item)
     }
 
-    private func captureImage(_ rep: NSBitmapImageRep, source: NSRunningApplication?) {
-        guard let png = ImageProcessing.pngData(from: rep) else { return }
-        guard png.count <= preferences.maxCaptureBytes else { return }
-        let contentHash = Self.hash(png)
+    private func captureImage(source: NSRunningApplication?) {
+        // Store the original pasteboard image data verbatim. Re-encoding it
+        // through NSBitmapImageRep shifts colors on wide-gamut (Display P3)
+        // images, so the full payload is kept byte-for-byte — only the small
+        // list thumbnail is derived from a decoded bitmap.
+        let imageData: Data
+        let fileExtension: String
+        if let png = pasteboard.data(forType: .png) {
+            imageData = png
+            fileExtension = "png"
+        } else if let tiff = pasteboard.data(forType: .tiff) {
+            imageData = tiff
+            fileExtension = "tiff"
+        } else {
+            return
+        }
+        guard imageData.count <= preferences.maxCaptureBytes else { return }
+
+        let contentHash = Self.hash(imageData)
         do {
             // Dedup before writing the blob, so a repeat copy leaves no
             // orphan file on disk (ARCHITECTURE.md §6 step 10).
             if try repository.refloatExisting(hash: contentHash) { return }
-            let blobPath = try blobStore.write(png, fileExtension: "png")
+            let blobPath = try blobStore.write(
+                imageData, fileExtension: fileExtension
+            )
+
+            // Decode once for the list thumbnail and pixel dimensions.
+            let rep = NSBitmapImageRep(data: imageData)
             var thumbnailPath: String?
-            if let thumb = ImageProcessing.thumbnailPNGData(from: rep) {
+            if let rep, let thumb = ImageProcessing.thumbnailPNGData(from: rep) {
                 thumbnailPath = try blobStore.write(thumb, fileExtension: "png")
             }
+
             let item = ClipboardItem(
                 kind: .image,
                 contentHash: contentHash,
-                byteSize: png.count,
+                byteSize: imageData.count,
                 blobPath: blobPath,
                 thumbnailPath: thumbnailPath,
-                pixelWidth: rep.pixelsWide,
-                pixelHeight: rep.pixelsHigh,
+                pixelWidth: rep?.pixelsWide,
+                pixelHeight: rep?.pixelsHigh,
                 sourceBundleID: source?.bundleIdentifier,
                 sourceAppName: source?.localizedName
             )
             try repository.insert(item, maxItems: preferences.maxItems)
         } catch {
-            NSLog("ipaste: failed to store image: \(error)")
+            NSLog("Yankit: failed to store image: \(error)")
         }
     }
 
@@ -169,7 +190,7 @@ final class ClipboardMonitor {
             if try repository.refloatExisting(hash: item.contentHash) { return }
             try repository.insert(item, maxItems: preferences.maxItems)
         } catch {
-            NSLog("ipaste: failed to store clipboard item: \(error)")
+            NSLog("Yankit: failed to store clipboard item: \(error)")
         }
     }
 
@@ -194,16 +215,9 @@ final class ClipboardMonitor {
         return objects
     }
 
-    private func readImageRep() -> NSBitmapImageRep? {
-        if let png = pasteboard.data(forType: .png),
-           let rep = NSBitmapImageRep(data: png) {
-            return rep
-        }
-        if let tiff = pasteboard.data(forType: .tiff),
-           let rep = NSBitmapImageRep(data: tiff) {
-            return rep
-        }
-        return nil
+    private func hasImage() -> Bool {
+        guard let types = pasteboard.types else { return false }
+        return types.contains(.png) || types.contains(.tiff)
     }
 
     private func readText() -> String? {

@@ -1,2 +1,2 @@
 xcodegen generate
-open ipaste.xcodeproj
+open Yankit.xcodeproj

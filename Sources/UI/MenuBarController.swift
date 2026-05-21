@@ -1,6 +1,6 @@
 import AppKit
 
-/// The menu-bar (status bar) presence for ipaste.
+/// The menu-bar (status bar) presence for Yankit.
 ///
 /// Left-click opens the history panel; right-click (or control-click) opens
 /// the menu. See ARCHITECTURE.md §8.1.
@@ -32,7 +32,7 @@ final class MenuBarController: NSObject {
         guard let button = statusItem.button else { return }
         button.image = NSImage(
             systemSymbolName: "doc.on.clipboard",
-            accessibilityDescription: "ipaste"
+            accessibilityDescription: "Yankit"
         )
         button.image?.isTemplate = true
         button.target = self
@@ -67,7 +67,7 @@ final class MenuBarController: NSObject {
 
         menu.addItem(.separator())
         menu.addItem(
-            withTitle: "Quit ipaste",
+            withTitle: "Quit Yankit",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         )
@@ -102,3 +102,4 @@ final class MenuBarController: NSObject {
         )
     }
 }
+    

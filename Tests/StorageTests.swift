@@ -1,6 +1,6 @@
 import XCTest
 import GRDB
-@testable import ipaste
+@testable import Yankit
 
 /// Verifies the Phase 1 storage layer: insert, whole-history dedup,
 /// pinned-aware eviction, blob cleanup, and auto-expiry.
@@ -14,7 +14,7 @@ final class StorageTests: XCTestCase {
         try AppDatabase.migrator.migrate(queue)
 
         blobDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("ipaste-tests-\(UUID().uuidString)")
+            .appendingPathComponent("Yankit-tests-\(UUID().uuidString)")
         blobStore = try BlobStore(directory: blobDirectory)
         repository = ClipboardRepository(queue: queue, blobStore: blobStore)
     }

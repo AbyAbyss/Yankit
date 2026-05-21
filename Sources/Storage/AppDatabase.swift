@@ -1,9 +1,9 @@
 import Foundation
 import GRDB
 
-/// Owns ipaste's on-disk locations and the SQLite schema migration.
+/// Owns Yankit's on-disk locations and the SQLite schema migration.
 enum AppDatabase {
-    /// `~/Library/Application Support/ipaste`, created if missing.
+    /// `~/Library/Application Support/Yankit`, created if missing.
     ///
     /// The directory is created private (`0700`), excluded from Time Machine
     /// backups, and excluded from Spotlight indexing — clipboard history can
@@ -15,7 +15,7 @@ enum AppDatabase {
             appropriateFor: nil,
             create: true
         )
-        var directory = base.appendingPathComponent("ipaste", isDirectory: true)
+        var directory = base.appendingPathComponent("Yankit", isDirectory: true)
         let fileManager = FileManager.default
 
         if !fileManager.fileExists(atPath: directory.path) {
@@ -38,7 +38,7 @@ enum AppDatabase {
         return directory
     }
 
-    /// `~/Library/Application Support/ipaste/blobs` — image & file payloads.
+    /// `~/Library/Application Support/Yankit/blobs` — image & file payloads.
     static func blobsDirectory() throws -> URL {
         try supportDirectory().appendingPathComponent("blobs", isDirectory: true)
     }

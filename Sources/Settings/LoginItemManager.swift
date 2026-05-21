@@ -1,7 +1,7 @@
 import Foundation
 import ServiceManagement
 
-/// Wraps `SMAppService` to manage ipaste's launch-at-login state.
+/// Wraps `SMAppService` to manage Yankit's launch-at-login state.
 /// See ARCHITECTURE.md §2.
 enum LoginItemManager {
     static var isEnabled: Bool {
@@ -16,7 +16,7 @@ enum LoginItemManager {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            NSLog("ipaste: failed to update login item: \(error)")
+            NSLog("Yankit: failed to update login item: \(error)")
         }
     }
 }

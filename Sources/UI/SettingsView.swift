@@ -105,7 +105,7 @@ private struct GeneralSettingsTab: View {
 
     var body: some View {
         Form {
-            Toggle("Launch ipaste at login", isOn: Binding(
+            Toggle("Launch Yankit at login", isOn: Binding(
                 get: { LoginItemManager.isEnabled },
                 set: { LoginItemManager.setEnabled($0) }
             ))
@@ -133,7 +133,7 @@ private struct ExcludedAppsTab: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Copies made in these apps are not saved. "
-                 + "By default ipaste captures everything.")
+                 + "By default Yankit captures everything.")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
 
@@ -292,7 +292,7 @@ private struct AboutTab: View {
             Image(systemName: "doc.on.clipboard")
                 .font(.system(size: 44))
                 .foregroundStyle(.tint)
-            Text("ipaste")
+            Text("Yankit")
                 .font(.system(size: 20, weight: .semibold))
             Text("Version \(appVersion)")
                 .foregroundStyle(.secondary)

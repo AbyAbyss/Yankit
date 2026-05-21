@@ -18,7 +18,7 @@ final class MaintenanceService {
         do {
             try repository.runIntegritySweep()
         } catch {
-            NSLog("ipaste: integrity sweep failed: \(error)")
+            NSLog("Yankit: integrity sweep failed: \(error)")
         }
         runAutoExpire()
 
@@ -36,7 +36,7 @@ final class MaintenanceService {
                 olderThanDays: preferences.autoExpireDays
             )
         } catch {
-            NSLog("ipaste: auto-expire failed: \(error)")
+            NSLog("Yankit: auto-expire failed: \(error)")
         }
     }
 }

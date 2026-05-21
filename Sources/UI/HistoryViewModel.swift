@@ -45,7 +45,7 @@ final class HistoryViewModel: ObservableObject {
             thumbnails = Self.buildThumbnails(for: loaded, blobStore: blobStore)
             items = loaded
         } catch {
-            NSLog("ipaste: failed to load history: \(error)")
+            NSLog("Yankit: failed to load history: \(error)")
             thumbnails = [:]
             items = []
         }
@@ -63,7 +63,7 @@ final class HistoryViewModel: ObservableObject {
             try repository.setPinned(!item.pinned, id: item.id)
             reload()
         } catch {
-            NSLog("ipaste: failed to toggle pin: \(error)")
+            NSLog("Yankit: failed to toggle pin: \(error)")
         }
     }
 

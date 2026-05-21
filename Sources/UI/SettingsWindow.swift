@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Manages the Settings window. ipaste is a menu-bar agent, so this is a
+/// Manages the Settings window. Yankit is a menu-bar agent, so this is a
 /// normal window created and shown on demand rather than a SwiftUI `Settings`
 /// scene — which keeps dependency injection straightforward.
 final class SettingsWindowController {
@@ -31,7 +31,7 @@ final class SettingsWindowController {
             backing: .buffered,
             defer: false
         )
-        window.title = "ipaste Settings"
+        window.title = "Yankit Settings"
         window.contentView = NSHostingView(rootView: view)
         window.isReleasedWhenClosed = false
         return window
