@@ -52,17 +52,18 @@ struct HistoryView: View {
                                 item: item,
                                 thumbnail: viewModel.thumbnails[item.id],
                                 isSelected: index == viewModel.selectedIndex,
-                                onTogglePin: { viewModel.togglePin(item) }
+                                onTogglePin: { viewModel.togglePin(item) },
+                                onDelete: { viewModel.delete(item) }
                             )
-                            .id(index)
                             .onTapGesture { onSelectItem(item) }
                         }
                     }
                     .padding(6)
                 }
-                .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                .onChange(of: viewModel.selectedIndex) { _, _ in
+                    guard let id = viewModel.selectedItem?.id else { return }
                     withAnimation(.easeOut(duration: 0.12)) {
-                        proxy.scrollTo(newIndex, anchor: .center)
+                        proxy.scrollTo(id, anchor: .center)
                     }
                 }
             }

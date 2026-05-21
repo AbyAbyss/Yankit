@@ -1,13 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// One row in the history list: a per-kind preview plus a pin toggle.
-/// See ARCHITECTURE.md §8.2.
+/// One row in the history list: a per-kind preview, a pin toggle, and a
+/// delete control. See ARCHITECTURE.md §8.2.
 struct HistoryRowView: View {
     let item: ClipboardItem
     let thumbnail: NSImage?
     let isSelected: Bool
     var onTogglePin: () -> Void
+    var onDelete: () -> Void
+
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -23,7 +26,12 @@ struct HistoryRowView: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 4)
-            pinButton
+            HStack(spacing: 4) {
+                deleteButton
+                    .opacity(showsDelete ? 1 : 0)
+                    .disabled(!showsDelete)
+                pinButton
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -32,7 +40,12 @@ struct HistoryRowView: View {
                 .fill(isSelected ? Color.accentColor.opacity(0.22) : .clear)
         )
         .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
     }
+
+    /// The delete control is revealed on hover or when the row is selected,
+    /// so the row stays uncluttered but the action is always reachable.
+    private var showsDelete: Bool { isHovering || isSelected }
 
     @ViewBuilder
     private var icon: some View {
@@ -70,6 +83,16 @@ struct HistoryRowView: View {
         }
         .buttonStyle(.plain)
         .help(item.pinned ? "Unpin" : "Pin")
+    }
+
+    private var deleteButton: some View {
+        Button(action: onDelete) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.tertiary)
+        }
+        .buttonStyle(.plain)
+        .help("Remove from history")
     }
 
     private var fileIcon: NSImage {

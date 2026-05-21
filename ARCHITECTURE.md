@@ -316,6 +316,7 @@ Interaction:
 - Clicking a row pastes it.
 - `1`–`9` paste the Nth item directly (quick-access).
 - `⌘P` (or clicking the pin) toggles pin on the selected item.
+- `⌘⌫` (or the row's delete button) removes the selected item from history.
 
 ### 8.3 Settings window — `SettingsView`
 

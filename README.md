@@ -79,6 +79,7 @@ places your selection on the clipboard for a manual `⌘V`.
 | Type | Filter the history live |
 | `↑` `↓` | Move the selection |
 | `Return` | Paste the selected item |
+| `⌘⌫` | Delete the selected item from history |
 | `Esc` | Dismiss the panel |
 
 The `⌘⇧V` shortcut is rebindable in Settings → General.

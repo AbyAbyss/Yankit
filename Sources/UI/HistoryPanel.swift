@@ -155,6 +155,11 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
                 select(item)
             }
             return nil
+        case 51 where event.modifierFlags.contains(.command):  // ⌘⌫
+            if let item = viewModel.selectedItem {
+                viewModel.delete(item)
+            }
+            return nil
         default:
             return event
         }

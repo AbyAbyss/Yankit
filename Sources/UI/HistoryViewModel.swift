@@ -67,6 +67,22 @@ final class HistoryViewModel: ObservableObject {
         }
     }
 
+    /// Removes one item from history, keeping the selection near where it was.
+    func delete(_ item: ClipboardItem) {
+        do {
+            try repository.delete(id: item.id)
+        } catch {
+            NSLog("Yankit: failed to delete item: \(error)")
+            return
+        }
+        let previousIndex = selectedIndex
+        reload()
+        let count = filteredItems.count
+        if count > 0 {
+            selectedIndex = min(previousIndex, count - 1)
+        }
+    }
+
     private static func buildThumbnails(
         for items: [ClipboardItem],
         blobStore: BlobStore
