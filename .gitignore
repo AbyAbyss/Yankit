@@ -1,0 +1,24 @@
+# macOS
+.DS_Store
+
+# Xcode project — generated from project.yml by XcodeGen, do not commit
+*.xcodeproj
+
+# Build output
+DerivedData/
+.build/
+build/
+
+# Xcode user state
+*.xcuserstate
+xcuserdata/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# App runtime data (created under ~/Library, never in the repo, listed for safety)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+CLAUDE.md

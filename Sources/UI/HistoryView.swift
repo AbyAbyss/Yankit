@@ -1,0 +1,86 @@
+import AppKit
+import SwiftUI
+
+/// The history panel content: a search field over a scrolling,
+/// keyboard-navigable list. List navigation keys are handled by
+/// `HistoryPanelController`; this view handles search and display.
+/// See ARCHITECTURE.md §8.2.
+struct HistoryView: View {
+    @ObservedObject var viewModel: HistoryViewModel
+    var onSelectItem: (ClipboardItem) -> Void
+
+    @FocusState private var searchFocused: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            searchField
+            Divider()
+            content
+        }
+        .frame(width: 420, height: 520)
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onAppear {
+            DispatchQueue.main.async { searchFocused = true }
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search clipboard history", text: $viewModel.searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 14))
+                .focused($searchFocused)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        let items = viewModel.filteredItems
+        if items.isEmpty {
+            emptyState
+        } else {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            HistoryRowView(
+                                item: item,
+                                thumbnail: viewModel.thumbnails[item.id],
+                                isSelected: index == viewModel.selectedIndex,
+                                onTogglePin: { viewModel.togglePin(item) }
+                            )
+                            .id(index)
+                            .onTapGesture { onSelectItem(item) }
+                        }
+                    }
+                    .padding(6)
+                }
+                .onChange(of: viewModel.selectedIndex) { _, newIndex in
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        proxy.scrollTo(newIndex, anchor: .center)
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 6) {
+            Image(systemName: viewModel.searchText.isEmpty
+                  ? "doc.on.clipboard" : "magnifyingglass")
+                .font(.system(size: 30))
+                .foregroundStyle(.tertiary)
+            Text(viewModel.searchText.isEmpty
+                 ? "No clipboard history yet"
+                 : "No matches")
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
