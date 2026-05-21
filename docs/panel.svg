@@ -1,0 +1,77 @@
+<svg viewBox="0 0 760 580" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#20243F"/>
+      <stop offset="1" stop-color="#0D0E1A"/>
+    </linearGradient>
+    <linearGradient id="img" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3C7CC8"/>
+      <stop offset="1" stop-color="#6E5BD0"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <clipPath id="thumbClip">
+      <rect x="130" y="215" width="46" height="46" rx="11"/>
+    </clipPath>
+  </defs>
+
+  <rect width="760" height="580" fill="url(#back)"/>
+
+  <!-- panel -->
+  <rect x="110" y="66" width="540" height="472" rx="20" fill="#000000" opacity="0.55" filter="url(#shadow)"/>
+  <rect x="110" y="54" width="540" height="472" rx="20" fill="#1C1F39"/>
+  <rect x="110" y="54" width="540" height="472" rx="20" fill="none" stroke="#FFFFFF" stroke-opacity="0.09"/>
+
+  <!-- search bar -->
+  <circle cx="148" cy="90" r="7.5" fill="none" stroke="#5E66A0" stroke-width="2.5"/>
+  <line x1="153.5" y1="95.5" x2="161" y2="103" stroke="#5E66A0" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="170" y="95" font-size="14.5" fill="#6A7099">Search clipboard history</text>
+  <line x1="110" y1="116" x2="650" y2="116" stroke="#FFFFFF" stroke-opacity="0.07"/>
+
+  <!-- row 1 — selected, text -->
+  <rect x="120" y="124" width="520" height="68" rx="12" fill="#5B7FF0" fill-opacity="0.20"/>
+  <rect x="130" y="135" width="46" height="46" rx="11" fill="#5B6FE0"/>
+  <rect x="143" y="150" width="20" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="143" y="157" width="13" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="143" y="164" width="17" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <text x="192" y="153" font-size="14.5" font-weight="600" fill="#EDEEF6">https://github.com/aby/yankit</text>
+  <text x="192" y="174" font-size="12" fill="#888FB2">Safari · just now</text>
+
+  <!-- row 2 — image -->
+  <g clip-path="url(#thumbClip)">
+    <rect x="130" y="215" width="46" height="46" fill="url(#img)"/>
+    <circle cx="162" cy="230" r="6" fill="#FFE08A"/>
+    <path d="M134,261 L150,238 L168,261 Z" fill="#26335C"/>
+  </g>
+  <text x="192" y="233" font-size="14.5" font-weight="600" fill="#EDEEF6">Image · 2048 × 1280</text>
+  <text x="192" y="254" font-size="12" fill="#888FB2">Figma · 4 minutes ago</text>
+
+  <!-- row 3 — code -->
+  <rect x="130" y="295" width="46" height="46" rx="11" fill="#1F9E83"/>
+  <path d="M150,303 L143,318 L150,333 M156,303 L163,318 L156,333"
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.92"
+        stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="192" y="313" font-size="14" font-weight="600" fill="#EDEEF6"
+        font-family="ui-monospace, SFMono-Regular, Menlo, monospace">git push origin main</text>
+  <text x="192" y="334" font-size="12" fill="#888FB2">Terminal · 12 minutes ago</text>
+
+  <!-- row 4 — file, pinned -->
+  <rect x="130" y="375" width="46" height="46" rx="11" fill="#E0A23E"/>
+  <path d="M146,387 H160 L167,394 V409 H146 Z" fill="#FFFFFF" fill-opacity="0.94"/>
+  <path d="M160,387 V394 H167 Z" fill="#E0A23E"/>
+  <text x="192" y="393" font-size="14.5" font-weight="600" fill="#EDEEF6">Q3-roadmap.pdf</text>
+  <text x="192" y="414" font-size="12" fill="#888FB2">Finder · 1 hour ago</text>
+  <g transform="translate(612,398) rotate(40)">
+    <rect x="-7" y="-9" width="14" height="11" rx="4.5" fill="#6E84EE"/>
+    <rect x="-1.6" y="1.5" width="3.2" height="12" rx="1.6" fill="#6E84EE"/>
+  </g>
+
+  <!-- row 5 — text -->
+  <rect x="130" y="455" width="46" height="46" rx="11" fill="#5B6FE0"/>
+  <rect x="143" y="470" width="20" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="143" y="477" width="13" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <rect x="143" y="484" width="17" height="3" rx="1.5" fill="#FFFFFF" fill-opacity="0.92"/>
+  <text x="192" y="473" font-size="14.5" font-weight="600" fill="#EDEEF6">Thanks — this looks great!</text>
+  <text x="192" y="494" font-size="12" fill="#888FB2">Mail · 2 hours ago</text>
+</svg>

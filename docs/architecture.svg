@@ -1,0 +1,102 @@
+<svg viewBox="0 0 1080 600" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16182F"/>
+      <stop offset="1" stop-color="#0A0B15"/>
+    </linearGradient>
+    <linearGradient id="node" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#242848"/>
+      <stop offset="1" stop-color="#191C34"/>
+    </linearGradient>
+    <linearGradient id="hub" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C3360"/>
+      <stop offset="1" stop-color="#222748"/>
+    </linearGradient>
+    <marker id="aBlue" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M0,0.5 L9,5 L0,9.5 Z" fill="#6E84EE"/>
+    </marker>
+    <marker id="aViolet" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M0,0.5 L9,5 L0,9.5 Z" fill="#9B7BEF"/>
+    </marker>
+    <marker id="aGray" markerWidth="11" markerHeight="11" refX="8" refY="5" orient="auto">
+      <path d="M0,0.5 L9,5 L0,9.5 Z" fill="#6A719C"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="600" fill="url(#bg)"/>
+  <text x="44" y="48" font-size="13" font-weight="700" letter-spacing="3" fill="#474D78">YANKIT · DATA FLOW</text>
+
+  <!-- zones -->
+  <rect x="92" y="150" width="304" height="420" rx="24" fill="#5B7FF0" fill-opacity="0.05"/>
+  <rect x="684" y="150" width="304" height="420" rx="24" fill="#9B7BEF" fill-opacity="0.05"/>
+  <text x="116" y="176" text-anchor="start" font-size="12" font-weight="700" letter-spacing="3" fill="#6E84EE">CAPTURE</text>
+  <text x="964" y="176" text-anchor="end" font-size="12" font-weight="700" letter-spacing="3" fill="#9B7BEF">RECALL</text>
+
+  <!-- arrows -->
+  <line x1="482" y1="126" x2="262" y2="180" stroke="#6E84EE" stroke-width="2" marker-end="url(#aBlue)"/>
+  <line x1="244" y1="272" x2="244" y2="317" stroke="#6E84EE" stroke-width="2" marker-end="url(#aBlue)"/>
+  <line x1="244" y1="410" x2="244" y2="455" stroke="#6E84EE" stroke-width="2" marker-end="url(#aBlue)"/>
+  <line x1="436" y1="233" x2="379" y2="228" stroke="#6A719C" stroke-width="2" marker-end="url(#aGray)"/>
+  <line x1="836" y1="456" x2="836" y2="411" stroke="#9B7BEF" stroke-width="2" marker-end="url(#aViolet)"/>
+  <line x1="836" y1="318" x2="836" y2="273" stroke="#9B7BEF" stroke-width="2" marker-end="url(#aViolet)"/>
+  <line x1="816" y1="180" x2="604" y2="126" stroke="#9B7BEF" stroke-width="2" marker-end="url(#aViolet)"/>
+  <line x1="376" y1="364" x2="703" y2="364" stroke="#6A719C" stroke-width="2" marker-end="url(#aGray)"/>
+
+  <!-- nodes -->
+  <g>
+    <rect x="430" y="40" width="220" height="84" rx="15" fill="url(#hub)" stroke="#6E84EE" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="540" y="75" text-anchor="middle" font-size="16.5" font-weight="700" fill="#FFFFFF">macOS Pasteboard</text>
+    <text x="540" y="97" text-anchor="middle" font-size="12" fill="#9AA1C6">the system clipboard</text>
+  </g>
+
+  <g>
+    <rect x="116" y="184" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="244" y="219" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">Clipboard Monitor</text>
+    <text x="244" y="241" text-anchor="middle" font-size="12" fill="#888FB4">polls changeCount · 0.4s</text>
+  </g>
+  <g>
+    <rect x="116" y="322" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="244" y="357" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">Clipboard Repository</text>
+    <text x="244" y="379" text-anchor="middle" font-size="12" fill="#888FB4">dedup · eviction · pinning</text>
+  </g>
+  <g>
+    <rect x="116" y="460" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="244" y="495" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">SQLite + Blob Store</text>
+    <text x="244" y="517" text-anchor="middle" font-size="12" fill="#888FB4">history.sqlite · blobs/</text>
+  </g>
+
+  <g>
+    <rect x="708" y="184" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="836" y="219" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">Paste Service</text>
+    <text x="836" y="241" text-anchor="middle" font-size="12" fill="#888FB4">writes pasteboard · sends ⌘V</text>
+  </g>
+  <g>
+    <rect x="708" y="322" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="836" y="357" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">History Panel</text>
+    <text x="836" y="379" text-anchor="middle" font-size="12" fill="#888FB4">search · pin · choose</text>
+  </g>
+  <g>
+    <rect x="708" y="460" width="256" height="84" rx="14" fill="url(#node)" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <text x="836" y="495" text-anchor="middle" font-size="16.5" font-weight="700" fill="#F1F2F9">⌘⇧V  ·  Menu Bar</text>
+    <text x="836" y="517" text-anchor="middle" font-size="12" fill="#888FB4">opens the history</text>
+  </g>
+
+  <g>
+    <rect x="440" y="200" width="200" height="68" rx="13" fill="#1A1C30" stroke="#FFFFFF" stroke-opacity="0.08"/>
+    <text x="540" y="230" text-anchor="middle" font-size="14.5" font-weight="700" fill="#D9DCEC">Preferences</text>
+    <text x="540" y="250" text-anchor="middle" font-size="11.5" fill="#7E85AC">limit · pause · exclude</text>
+  </g>
+
+  <!-- arrow labels -->
+  <text x="372" y="146" text-anchor="middle" font-size="12" font-weight="600" fill="#8E96C0">poll</text>
+  <text x="260" y="300" font-size="12" font-weight="600" fill="#8E96C0">new copy</text>
+  <text x="260" y="438" font-size="12" font-weight="600" fill="#8E96C0">persist</text>
+  <text x="407" y="200" text-anchor="middle" font-size="11.5" font-weight="600" fill="#80879F">rules</text>
+  <text x="852" y="438" font-size="12" font-weight="600" fill="#A59AD8">open</text>
+  <text x="852" y="300" font-size="12" font-weight="600" fill="#A59AD8">chosen item</text>
+  <text x="712" y="146" text-anchor="middle" font-size="12" font-weight="600" fill="#A59AD8">write + paste</text>
+  <g>
+    <rect x="488" y="353" width="104" height="22" rx="7" fill="#13152A"/>
+    <text x="540" y="368" text-anchor="middle" font-size="12" font-weight="600" fill="#9098BC">reads history</text>
+  </g>
+</svg>

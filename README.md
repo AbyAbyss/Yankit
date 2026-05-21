@@ -17,8 +17,8 @@
 
 <p align="center">
   <a href="#features">Features</a> &nbsp;·&nbsp;
+  <a href="#a-look-inside">A look inside</a> &nbsp;·&nbsp;
   <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
-  <a href="#requirements">Requirements</a> &nbsp;·&nbsp;
   <a href="#build-and-run">Build</a> &nbsp;·&nbsp;
   <a href="#keyboard-shortcuts">Shortcuts</a> &nbsp;·&nbsp;
   <a href="#roadmap">Roadmap</a>
@@ -32,23 +32,37 @@
 - **Searchable history** — press ⌘⇧V, start typing, and the list filters instantly.
 - **Pin what matters** — pinned items are exempt from the rolling limit and never auto-deleted.
 - **Paste straight back** — pick an item and Yankit pastes it into the app you were just in.
+- **Prune on the fly** — delete any single item with the row's × button or ⌘⌫.
 - **Light on memory** — history lives in SQLite with image blobs on disk, not in RAM (~40 MB idle).
 - **Privacy-first** — skips password-manager content, dims while paused, and keeps its data out of Spotlight and Time Machine.
 - **Pause when you need to** — one click silences capture for an hour, until tomorrow, or until you resume.
 - **Per-app exclusion** — tell Yankit to ignore copies made in specific apps.
 - **Yours to tune** — a configurable cap (default 30) trims the oldest items, with optional auto-expiry by age.
 
+## A look inside
+
+Press `⌘⇧V` anywhere and the history panel drops in, centered and ready — search,
+arrow keys, Return to paste.
+
+<p align="center">
+  <img src="docs/panel.svg" alt="The Yankit history panel" width="660">
+</p>
+
 ## How it works
 
-Yankit lives in the menu bar — no Dock icon, no window in your way. It watches the
-system pasteboard and records each new copy into a local SQLite database, with image
-and file payloads stored as files on disk so the database stays small and fast.
+Yankit lives in the menu bar — no Dock icon, no window in your way. A lightweight
+monitor watches the system pasteboard and records each new copy into a local
+SQLite database, with image and file payloads stored as files on disk so the
+database stays small and fast. When you pick an item, it goes back on the
+pasteboard and Yankit pastes it into wherever you were.
 
-Press **⌘⇧V** anywhere to open the history panel, filter with a few keystrokes, and
-hit Return to paste. Pinned items stick around; everything else rolls off once you
-pass the limit.
+<p align="center">
+  <img src="docs/architecture.svg" alt="Yankit data flow" width="980">
+</p>
 
-Nothing leaves your Mac. There is no account, no sync, and no telemetry.
+Two paths, one shared clipboard: the **capture** path records what you copy, the
+**recall** path puts it back. Nothing leaves your Mac — no account, no sync, no
+telemetry. The full design is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Requirements
 
@@ -84,13 +98,6 @@ places your selection on the clipboard for a manual `⌘V`.
 
 The `⌘⇧V` shortcut is rebindable in Settings → General.
 
-## Architecture
-
-The full design — data model, capture pipeline, eviction strategy, and the phased
-build — lives in [ARCHITECTURE.md](ARCHITECTURE.md). In short: a polling clipboard
-monitor, a GRDB/SQLite store with on-disk blobs, a non-activating SwiftUI panel,
-and a handful of focused services wired together at launch.
-
 ## Building a release
 
 Yankit ships unsigned for now. To build a distributable copy:
@@ -101,8 +108,10 @@ Yankit ships unsigned for now. To build a distributable copy:
 3. Optionally wrap it in a disk image:
    `hdiutil create -volname Yankit -srcfolder Yankit.app -ov Yankit.dmg`
 
-Because the build is unsigned, the first launch needs a right-click → **Open** to
-get past Gatekeeper.
+Because the build is unsigned, Gatekeeper blocks the first launch. Open
+**System Settings → Privacy & Security**, find the note about Yankit, and click
+**Open Anyway**. Signing and notarization (an Apple Developer account) would
+remove that step.
 
 ## Roadmap
 
