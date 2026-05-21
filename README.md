@@ -98,20 +98,20 @@ places your selection on the clipboard for a manual `⌘V`.
 
 The `⌘⇧V` shortcut is rebindable in Settings → General.
 
-## Building a release
+## Releasing
 
-Yankit ships unsigned for now. To build a distributable copy:
+Releases are tag-driven — pushing a version tag builds, tests, packages a DMG,
+and publishes a GitHub Release automatically:
 
-1. In Xcode, select the `Yankit` scheme, then Product → Archive.
-2. Choose Distribute App → Copy App, or build the Release configuration and take
-   `Yankit.app` from the build output.
-3. Optionally wrap it in a disk image:
-   `hdiutil create -volname Yankit -srcfolder Yankit.app -ov Yankit.dmg`
+```sh
+git tag v1.0.0
+git push origin v1.0.0
+```
 
-Because the build is unsigned, Gatekeeper blocks the first launch. Open
-**System Settings → Privacy & Security**, find the note about Yankit, and click
-**Open Anyway**. Signing and notarization (an Apple Developer account) would
-remove that step.
+Builds are currently unsigned, so the first launch needs a one-time approval in
+System Settings → Privacy & Security. See **[docs/RELEASING.md](docs/RELEASING.md)**
+for the full guide — local builds, code signing, notarization, and publishing
+to Homebrew.
 
 ## Roadmap
 
