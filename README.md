@@ -19,7 +19,8 @@
   <a href="#features">Features</a> &nbsp;·&nbsp;
   <a href="#a-look-inside">A look inside</a> &nbsp;·&nbsp;
   <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
-  <a href="#build-and-run">Build</a> &nbsp;·&nbsp;
+  <a href="#download">Download</a> &nbsp;·&nbsp;
+  <a href="#build-from-source">Build</a> &nbsp;·&nbsp;
   <a href="#keyboard-shortcuts">Shortcuts</a> &nbsp;·&nbsp;
   <a href="#roadmap">Roadmap</a>
 </p>
@@ -64,19 +65,36 @@ Two paths, one shared clipboard: the **capture** path records what you copy, the
 **recall** path puts it back. Nothing leaves your Mac — no account, no sync, no
 telemetry. The full design is in [ARCHITECTURE.md](ARCHITECTURE.md).
 
+## Download
+
+Grab the latest `Yankit-<version>.dmg` from the [**Releases**](https://github.com/AbyAbyss/Yankit/releases/latest) page, open it, and drag **Yankit** into Applications. Yankit needs macOS 14 (Sonoma) or later.
+
+## First launch
+
+macOS will say it can't verify Yankit (free side project, not notarized).
+
+Open **System Settings → Privacy & Security** and click **Open Anyway**, or run in Terminal:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Yankit.app
+```
+
+For one-touch paste, also grant Yankit **Accessibility** access when prompted (System Settings → Privacy & Security → Accessibility).
+
 ## Requirements
 
 - macOS 14 (Sonoma) or later
 - Xcode 15 or later
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 
-## Build and run
+## Build from source
 
 The Xcode project is generated from `project.yml`, so it is not committed:
 
 ```sh
-xcodegen generate
-open Yankit.xcodeproj
+brew install xcodegen
+git clone https://github.com/AbyAbyss/Yankit.git
+cd Yankit && xcodegen generate && open Yankit.xcodeproj
 ```
 
 Press `⌘R` to run and `⌘U` to run the tests. A clipboard icon appears in the menu bar.
