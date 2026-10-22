@@ -13,6 +13,8 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
     /// Invoked with the chosen item and the app that was frontmost when the
     /// panel opened, so the paste flow can return focus there.
     var onSelect: ((ClipboardItem, NSRunningApplication?) -> Void)?
+    /// Invoked when the panel's settings button is clicked.
+    var onOpenSettings: (() -> Void)?
 
     private let repository: ClipboardRepository
     private let blobStore: BlobStore
@@ -21,10 +23,9 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
     private var panel: HistoryPanel?
     private var viewModel: HistoryViewModel?
     private var keyMonitor: Any?
+    private var modifierMonitor: Any?
     /// The frontmost app captured when the panel opened (paste target).
     private var targetApp: NSRunningApplication?
-
-    private static let panelSize = NSSize(width: 420, height: 520)
 
     init(
         repository: ClipboardRepository,
@@ -56,10 +57,14 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         self.viewModel = viewModel
 
         let view = HistoryView(
-            viewModel: viewModel, preferences: preferences
-        ) { [weak self] item in
-            self?.select(item)
-        }
+            viewModel: viewModel,
+            preferences: preferences,
+            onSelectItem: { [weak self] item in self?.select(item) },
+            onOpenSettings: { [weak self] in
+                self?.hide()
+                self?.onOpenSettings?()
+            }
+        )
 
         let panel = panel ?? makePanel()
         self.panel = panel
@@ -93,7 +98,7 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
 
     private func makePanel() -> HistoryPanel {
         let panel = HistoryPanel(
-            contentRect: NSRect(origin: .zero, size: Self.panelSize),
+            contentRect: NSRect(origin: .zero, size: HistoryView.compactSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -117,7 +122,8 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
             panel.center()
             return
         }
-        let size = Self.panelSize
+        let size = preferences.showPreviewPane
+            ? HistoryView.wideSize : HistoryView.compactSize
         panel.setFrame(
             NSRect(
                 x: visibleFrame.midX - size.width / 2,
@@ -129,18 +135,20 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         )
     }
 
-    /// Opens the "Move to Category" menu beside the selected row. Choosing
-    /// the checked category takes the item out of it, matching the row's
-    /// context menu.
+    /// Opens the "Move to Category" menu beside the selected row: the
+    /// categories with their colors (choosing the checked one takes the item
+    /// out of it, matching the row's context menu), then "New Category…".
     private func showMoveMenu() {
         guard let viewModel,
               let item = viewModel.selectedItem,
               let rowFrame = viewModel.selectedRowFrame,
-              let view = panel?.contentView,
-              !viewModel.categories.isEmpty
+              let view = panel?.contentView
         else { return }
 
         let menu = NSMenu(title: "Move to Category")
+        if !viewModel.categories.isEmpty {
+            menu.addItem(.sectionHeader(title: "Move To"))
+        }
         for category in viewModel.categories {
             let menuItem = NSMenuItem(
                 title: category.name,
@@ -150,8 +158,23 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
             menuItem.target = self
             menuItem.representedObject = category.id
             menuItem.state = item.categoryID == category.id ? .on : .off
+            menuItem.image = NSImage(
+                systemSymbolName: "circle.fill", accessibilityDescription: nil
+            )?.withSymbolConfiguration(
+                .init(pointSize: 8, weight: .regular)
+                    .applying(.init(paletteColors: [NSColor(hex: category.color)]))
+            )
             menu.addItem(menuItem)
         }
+        if !viewModel.categories.isEmpty { menu.addItem(.separator()) }
+        let newCategory = NSMenuItem(
+            title: "New Category…",
+            action: #selector(newCategoryForSelectedItem),
+            keyEquivalent: ""
+        )
+        newCategory.target = self
+        menu.addItem(newCategory)
+
         // The frame is in SwiftUI's top-left-origin window coordinates.
         let y = view.isFlipped
             ? rowFrame.maxY
@@ -173,11 +196,23 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         )
     }
 
+    @objc private func newCategoryForSelectedItem() {
+        guard let viewModel, let item = viewModel.selectedItem else { return }
+        viewModel.overlay = .categoryEditor(nil, moveItemID: item.id)
+    }
+
+    /// Installs the key monitor, and a modifier monitor so holding ⌥
+    /// reveals sensitive content in the preview pane.
     private func installKeyMonitor() {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             [weak self] event in
             self?.handleKeyDown(event) ?? event
+        }
+        modifierMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) {
+            [weak self] event in
+            self?.viewModel?.isOptionHeld = event.modifierFlags.contains(.option)
+            return event
         }
     }
 
@@ -186,43 +221,66 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
             NSEvent.removeMonitor(keyMonitor)
             self.keyMonitor = nil
         }
+        if let modifierMonitor {
+            NSEvent.removeMonitor(modifierMonitor)
+            self.modifierMonitor = nil
+        }
     }
 
-    /// Handles list-navigation keys. Returns nil to consume the event, or the
-    /// event itself to let it reach the search field. During an inline edit
-    /// every key goes to the edit field, except Escape, which cancels it.
+    /// Handles the panel's keys. Returns nil to consume the event, or the
+    /// event itself to let it reach the search field. While a card is open
+    /// every key goes to it, except Escape, which closes it.
     private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
         guard panel?.isVisible == true, let viewModel else { return event }
         if viewModel.isEditing {
             guard event.keyCode == 53 else { return event }
-            viewModel.cancelEditing()
+            viewModel.overlay = nil
+            return nil
+        }
+        let command = event.modifierFlags.contains(.command)
+        // ⌘1–⌘9 paste the Nth visible item.
+        if command, let digit = event.charactersIgnoringModifiers.flatMap(Int.init),
+           (1...9).contains(digit) {
+            let items = viewModel.filteredItems
+            if items.indices.contains(digit - 1) {
+                select(items[digit - 1])
+            }
             return nil
         }
         switch event.keyCode {
         case 125:                       // down arrow
             viewModel.moveSelection(1)
-            return nil
         case 126:                       // up arrow
             viewModel.moveSelection(-1)
-            return nil
+        case 48:                        // tab, shift-tab: switch chip
+            viewModel.cycleFilter(by: event.modifierFlags.contains(.shift) ? -1 : 1)
         case 53:                        // escape
             hide()
-            return nil
         case 36, 76:                    // return, keypad enter
             if let item = viewModel.selectedItem {
                 select(item)
             }
-            return nil
-        case 51 where event.modifierFlags.contains(.command):  // ⌘⌫
+        case 51 where command:          // ⌘⌫
             if let item = viewModel.selectedItem {
                 viewModel.delete(item)
             }
-            return nil
-        case 46 where event.modifierFlags.contains(.command):  // ⌘M
+        case 46 where command:          // ⌘M
             showMoveMenu()
-            return nil
+        case 35 where command:          // ⌘P
+            if let item = viewModel.selectedItem {
+                viewModel.togglePin(item)
+            }
+        case 37 where command:          // ⌘L
+            if let item = viewModel.selectedItem {
+                viewModel.overlay = .label(itemID: item.id)
+            }
+        case 45 where command:          // ⌘N
+            viewModel.overlay = .categoryEditor(nil, moveItemID: nil)
+        case 40 where command:          // ⌘K
+            viewModel.requestSearchFocus()
         default:
             return event
         }
+        return nil
     }
 }

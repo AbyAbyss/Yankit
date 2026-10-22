@@ -222,6 +222,30 @@ final class StorageTests: XCTestCase {
         XCTAssertNil(stored.categoryID, "Item is kept, just uncategorized")
     }
 
+    func testAddCategoryAppendsAndReorderChangesOrder() throws {
+        let a = ClipboardCategory(name: "A")
+        let b = ClipboardCategory(name: "B")
+        try repository.addCategory(a)
+        try repository.addCategory(b)
+        XCTAssertEqual(try repository.allCategories().map(\.name), ["A", "B"])
+
+        try repository.reorderCategories([b.id, a.id])
+
+        XCTAssertEqual(try repository.allCategories().map(\.name), ["B", "A"])
+    }
+
+    func testCategoryItemCountsAndPinnedCount() throws {
+        let category = ClipboardCategory(name: "Work")
+        try repository.addCategory(category)
+        var inCategory = textItem("a")
+        inCategory.categoryID = category.id
+        try repository.insert(inCategory, maxItems: 30)
+        try repository.insert(textItem("b", pinned: true), maxItems: 30)
+
+        XCTAssertEqual(try repository.categoryItemCounts(), [category.id: 1])
+        XCTAssertEqual(try repository.pinnedCount(), 1)
+    }
+
     func testSaveCategoryUpdatesExistingCategory() throws {
         var category = ClipboardCategory(name: "Keys")
         try repository.saveCategory(category)

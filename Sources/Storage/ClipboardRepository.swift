@@ -160,17 +160,64 @@ final class ClipboardRepository {
 
     // MARK: - Categories
 
-    /// All categories, oldest first — the order their chips appear in.
+    /// All categories in chip order.
     func allCategories() throws -> [ClipboardCategory] {
         try queue.read { db in
-            try ClipboardCategory.order(Column("created_at")).fetchAll(db)
+            try ClipboardCategory
+                .order(Column("sort_order"), Column("created_at"))
+                .fetchAll(db)
         }
     }
 
-    /// Inserts a new category or updates an existing one.
+    /// Inserts a new category after the existing ones.
+    func addCategory(_ category: ClipboardCategory) throws {
+        try queue.write { db in
+            let last = try Int.fetchOne(
+                db, sql: "SELECT MAX(sort_order) FROM category"
+            )
+            var category = category
+            category.sortOrder = (last ?? -1) + 1
+            try category.insert(db)
+        }
+    }
+
+    /// Updates an existing category.
     func saveCategory(_ category: ClipboardCategory) throws {
         try queue.write { db in
             try category.save(db)
+        }
+    }
+
+    /// Sets the chip order to the order of `ids`.
+    func reorderCategories(_ ids: [String]) throws {
+        try queue.write { db in
+            for (index, id) in ids.enumerated() {
+                try db.execute(
+                    sql: "UPDATE category SET sort_order = ? WHERE id = ?",
+                    arguments: [index, id]
+                )
+            }
+        }
+    }
+
+    /// The number of items in each category, keyed by category id.
+    func categoryItemCounts() throws -> [String: Int] {
+        try queue.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT category_id, COUNT(*) AS n FROM clipboard_item
+                WHERE category_id IS NOT NULL GROUP BY category_id
+                """)
+            var counts: [String: Int] = [:]
+            for row in rows {
+                counts[row["category_id"]] = row["n"]
+            }
+            return counts
+        }
+    }
+
+    func pinnedCount() throws -> Int {
+        try queue.read { db in
+            try ClipboardItem.filter(Column("pinned") == true).fetchCount(db)
         }
     }
 

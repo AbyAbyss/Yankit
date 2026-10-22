@@ -68,6 +68,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 preferences: preferences, repository: repository
             )
 
+            panelController.onOpenSettings = { [weak settingsController] in
+                settingsController?.show()
+            }
+
             let menuBar = MenuBarController()
             menuBar.onOpenHistory = { [weak panelController] in
                 panelController?.toggle()

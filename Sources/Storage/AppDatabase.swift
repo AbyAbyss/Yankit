@@ -89,6 +89,14 @@ enum AppDatabase {
                 t.add(column: "label", .text)
             }
         }
+        migrator.registerMigration("v3_category_style") { db in
+            try db.alter(table: "category") { t in
+                t.add(column: "color", .text).notNull().defaults(to: "#7AB0FF")
+                t.add(column: "visible_characters", .integer)
+                    .notNull().defaults(to: 4)
+                t.add(column: "sort_order", .integer).notNull().defaults(to: 0)
+            }
+        }
         return migrator
     }
 

@@ -18,26 +18,51 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// The history panel's background material.
-enum PanelMaterial: String, CaseIterable, Identifiable {
-    case glass        // Liquid Glass, macOS 26+
-    case clearGlass   // the more transparent Liquid Glass variant, macOS 26+
-    case translucent  // the classic blurred material
+/// The accent color for selected chips, primary buttons, and highlights.
+/// Its colors live in `Theme.swift`.
+enum AppAccent: String, CaseIterable, Identifiable {
+    case lime, blue, purple, orange, pink
+    case system  // the macOS accent color from System Settings
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .glass: "Glass"
-        case .clearGlass: "Clear Glass"
+        case .lime: "Lime"
+        case .blue: "Blue"
+        case .purple: "Purple"
+        case .orange: "Orange"
+        case .pink: "Pink"
+        case .system: "System"
+        }
+    }
+}
+
+/// The history panel's background material.
+enum PanelMaterial: String, CaseIterable, Identifiable {
+    case clearGlass   // "Liquid Glass": see-through glass, macOS 26+
+    case glass        // "Frosted Glass": regular Liquid Glass, macOS 26+
+    case translucent  // the classic blurred material
+    case solid        // no transparency
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .clearGlass: "Liquid Glass"
+        case .glass: "Frosted Glass"
         case .translucent: "Translucent"
+        case .solid: "Solid"
         }
     }
 
-    /// The materials this system can draw. Liquid Glass needs macOS 26.
-    static var available: [PanelMaterial] {
-        if #available(macOS 26, *) { return allCases }
-        return [.translucent]
+    var isGlass: Bool { self == .clearGlass || self == .glass }
+
+    /// Whether this system can draw the material. Both glass styles need
+    /// macOS 26.
+    var isAvailable: Bool {
+        if #available(macOS 26, *) { return true }
+        return !isGlass
     }
 }
 
@@ -86,6 +111,17 @@ final class Preferences: ObservableObject {
     @Published var panelMaterial: PanelMaterial {
         didSet { defaults.set(panelMaterial.rawValue, forKey: Key.panelMaterial) }
     }
+    @Published var accent: AppAccent {
+        didSet { defaults.set(accent.rawValue, forKey: Key.accent) }
+    }
+    /// When off, the Recent chip leaves pinned items out.
+    @Published var showPinnedInRecent: Bool {
+        didSet { defaults.set(showPinnedInRecent, forKey: Key.showPinnedInRecent) }
+    }
+    /// Beta: widens the panel to show a preview of the selected item.
+    @Published var showPreviewPane: Bool {
+        didSet { defaults.set(showPreviewPane, forKey: Key.showPreviewPane) }
+    }
     /// How strongly the panel is tinted with the window background color:
     /// 0 shows the material as-is, 1 is fully solid.
     @Published var panelOpacity: Double {
@@ -115,9 +151,15 @@ final class Preferences: ObservableObject {
         lastHistoryFilter = defaults.string(forKey: Key.lastHistoryFilter) ?? ""
         panelMaterial = defaults.string(forKey: Key.panelMaterial)
             .flatMap(PanelMaterial.init(rawValue:))
-            .flatMap { PanelMaterial.available.contains($0) ? $0 : nil }
+            .flatMap { $0.isAvailable ? $0 : nil }
             ?? .translucent
         panelOpacity = (defaults.object(forKey: Key.panelOpacity) as? Double) ?? 0
+        accent = defaults.string(forKey: Key.accent)
+            .flatMap(AppAccent.init(rawValue:)) ?? .lime
+        showPinnedInRecent =
+            (defaults.object(forKey: Key.showPinnedInRecent) as? Bool) ?? true
+        showPreviewPane =
+            (defaults.object(forKey: Key.showPreviewPane) as? Bool) ?? false
     }
 
     private enum Key {
@@ -132,5 +174,8 @@ final class Preferences: ObservableObject {
         static let lastHistoryFilter = "lastHistoryFilter"
         static let panelMaterial = "panelMaterial"
         static let panelOpacity = "panelOpacity"
+        static let accent = "accent"
+        static let showPinnedInRecent = "showPinnedInRecent"
+        static let showPreviewPane = "showPreviewPane"
     }
 }

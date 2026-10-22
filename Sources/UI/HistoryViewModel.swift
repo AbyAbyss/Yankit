@@ -27,6 +27,16 @@ enum HistoryFilter: Hashable {
     }
 }
 
+/// A card drawn over the panel. Cards live inside the panel because a
+/// separate window would take key focus and dismiss it.
+enum PanelOverlay: Equatable {
+    /// Edits the label of the item with this id.
+    case label(itemID: String)
+    /// Creates a category (`nil`) or edits one. When creating, the item
+    /// with `moveItemID` is moved into the new category.
+    case categoryEditor(ClipboardCategory?, moveItemID: String?)
+}
+
 /// Backs the history panel: loads items and categories from the repository,
 /// filters them by the selected chip and the search text, tracks the
 /// keyboard selection, and applies pin, label, and category changes.
@@ -40,19 +50,27 @@ final class HistoryViewModel: ObservableObject {
         }
     }
     @Published var searchText: String = "" {
-        didSet { selectedIndex = 0 }
+        // The search field also writes back unchanged text (e.g. on focus),
+        // which must not reset the selection.
+        didSet { if searchText != oldValue { selectedIndex = 0 } }
     }
-    @Published var selectedIndex: Int = 0
-
-    // Inline editing. At most one of these is active at a time; while one
-    // is, the panel's key monitor leaves keys to the text field.
-    @Published var editingLabelItemID: String?
-    @Published var isAddingCategory = false
-    @Published var renamingCategoryID: String?
-
-    var isEditing: Bool {
-        editingLabelItemID != nil || isAddingCategory || renamingCategoryID != nil
+    @Published var selectedIndex: Int = 0 {
+        didSet { isPeekToggled = false }
     }
+    @Published var overlay: PanelOverlay?
+    /// Sensitive content is revealed in the preview while either is set.
+    @Published var isPeekToggled = false
+    @Published var isOptionHeld = false
+    /// Bumped to ask the view to focus the search field (⌘K).
+    @Published private(set) var searchFocusRequest = 0
+    /// Bumped when the keyboard moves the selection, so the list scrolls
+    /// to keep it visible. Clicks don't bump it: scrolling would move the
+    /// row out from under the pointer and break double-click.
+    @Published private(set) var keyboardScrollRequest = 0
+
+    /// While an overlay is open, the panel's key monitor leaves keys to it.
+    var isEditing: Bool { overlay != nil }
+    var isRevealing: Bool { isPeekToggled || isOptionHeld }
 
     /// The selected row's frame in window coordinates, so ⌘M can open the
     /// move menu beside it.
@@ -60,7 +78,7 @@ final class HistoryViewModel: ObservableObject {
 
     /// Preloaded list thumbnails, keyed by item id. Only image items appear.
     private(set) var thumbnails: [String: NSImage] = [:]
-    private var sensitiveCategoryIDs: Set<String> = []
+    private var categoriesByID: [String: ClipboardCategory] = [:]
 
     private let repository: ClipboardRepository
     private let blobStore: BlobStore
@@ -79,15 +97,18 @@ final class HistoryViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Visible items
+
     /// Items in the selected chip that match the current search text. An
     /// empty query shows all. Matches across label, text content, file name,
-    /// and source app name (§8.2) — but never the hidden content of an item
-    /// in a sensitive category.
+    /// source app, and category name (§8.2) — but never the hidden content
+    /// of an item in a sensitive category.
     var filteredItems: [ClipboardItem] {
         let inFilter: [ClipboardItem]
         switch filter {
         case .recent:
-            inFilter = items
+            inFilter = preferences.showPinnedInRecent
+                ? items : items.filter { !$0.pinned }
         case .pinned:
             inFilter = items.filter(\.pinned)
         case .category(let id):
@@ -96,20 +117,16 @@ final class HistoryViewModel: ObservableObject {
         guard !searchText.isEmpty else { return inFilter }
         let query = searchText.lowercased()
         return inFilter.filter { item in
-            let contentMatches = !isSensitive(item) && (
+            let category = category(of: item)
+            let contentMatches = category?.isSensitive != true && (
                 item.textContent?.lowercased().contains(query) == true
                     || item.fileName?.lowercased().contains(query) == true
             )
             return contentMatches
                 || item.label?.lowercased().contains(query) == true
                 || item.sourceAppName?.lowercased().contains(query) == true
+                || category?.name.lowercased().contains(query) == true
         }
-    }
-
-    /// True when the item is in a sensitive category, so its content must
-    /// be redacted in the UI.
-    func isSensitive(_ item: ClipboardItem) -> Bool {
-        item.categoryID.map(sensitiveCategoryIDs.contains) ?? false
     }
 
     var selectedItem: ClipboardItem? {
@@ -118,7 +135,35 @@ final class HistoryViewModel: ObservableObject {
         return visible[selectedIndex]
     }
 
+    func category(of item: ClipboardItem) -> ClipboardCategory? {
+        item.categoryID.flatMap { categoriesByID[$0] }
+    }
+
+    func presentation(of item: ClipboardItem) -> ItemPresentation {
+        ItemPresentation(item: item, category: category(of: item))
+    }
+
+    var pinnedCount: Int { items.filter(\.pinned).count }
+
+    func itemCount(in category: ClipboardCategory) -> Int {
+        items.filter { $0.categoryID == category.id }.count
+    }
+
+    /// Up to four labels already in use, newest first, for the label card.
+    func labelSuggestions(excluding current: String?) -> [String] {
+        var seen = Set<String>()
+        return items.compactMap(\.label)
+            .filter { $0 != current && seen.insert($0).inserted }
+            .prefix(4)
+            .map { $0 }
+    }
+
+    // MARK: - Loading
+
+    /// Reloads from the repository, keeping the same item selected when it
+    /// is still visible.
     func reload() {
+        let selectedID = selectedItem?.id
         do {
             let loaded = try repository.allItems()
             thumbnails = Self.buildThumbnails(for: loaded, blobStore: blobStore)
@@ -130,20 +175,47 @@ final class HistoryViewModel: ObservableObject {
             items = []
             categories = []
         }
-        sensitiveCategoryIDs = Set(categories.filter(\.isSensitive).map(\.id))
+        categoriesByID = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
         // A remembered or open category chip may have been deleted.
-        if case .category(let id) = filter,
-           !categories.contains(where: { $0.id == id }) {
+        if case .category(let id) = filter, categoriesByID[id] == nil {
             filter = .recent
         }
-        selectedIndex = 0
+        selectedIndex = filteredItems.firstIndex { $0.id == selectedID } ?? 0
     }
+
+    /// The full-size image for the preview pane, read from disk on demand.
+    func fullImage(for item: ClipboardItem) -> NSImage? {
+        guard let path = item.blobPath else { return nil }
+        return NSImage(contentsOf: blobStore.absoluteURL(forRelativePath: path))
+    }
+
+    // MARK: - Navigation
 
     func moveSelection(_ delta: Int) {
         let count = filteredItems.count
         guard count > 0 else { return }
         selectedIndex = min(max(0, selectedIndex + delta), count - 1)
+        keyboardScrollRequest += 1
     }
+
+    /// The chips in Tab order.
+    var filters: [HistoryFilter] {
+        [.recent, .pinned] + categories.map { .category($0.id) }
+    }
+
+    /// Selects the next (or previous, for a negative `delta`) chip,
+    /// wrapping around.
+    func cycleFilter(by delta: Int) {
+        let all = filters
+        let current = all.firstIndex(of: filter) ?? 0
+        filter = all[(current + delta + all.count) % all.count]
+    }
+
+    func requestSearchFocus() {
+        searchFocusRequest += 1
+    }
+
+    // MARK: - Item changes
 
     func togglePin(_ item: ClipboardItem) {
         do {
@@ -170,14 +242,12 @@ final class HistoryViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Labels & categories
-
-    /// Saves the label being edited inline. Blank text removes the label.
-    func commitLabel(_ text: String, for item: ClipboardItem) {
+    /// Saves the label typed in the label card. Blank text removes the label.
+    func commitLabel(_ text: String, forItemID id: String) {
         let label = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        editingLabelItemID = nil
+        overlay = nil
         perform("set label") {
-            try repository.setLabel(label.isEmpty ? nil : label, id: item.id)
+            try repository.setLabel(label.isEmpty ? nil : label, id: id)
         }
     }
 
@@ -203,31 +273,22 @@ final class HistoryViewModel: ObservableObject {
         return true
     }
 
-    /// Creates a category from the chip bar's inline field. Blank text
-    /// cancels.
-    func commitNewCategory(named text: String) {
-        let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        isAddingCategory = false
-        guard !name.isEmpty else { return }
-        perform("create category") {
-            try repository.saveCategory(ClipboardCategory(name: name))
+    // MARK: - Categories
+
+    /// Saves the category from the editor card: inserts it when new (and
+    /// moves the pending item into it), updates it otherwise.
+    func saveCategory(_ category: ClipboardCategory, isNew: Bool, moveItemID: String?) {
+        overlay = nil
+        perform("save category") {
+            if isNew {
+                try repository.addCategory(category)
+                if let moveItemID {
+                    try repository.setCategory(category.id, id: moveItemID)
+                }
+            } else {
+                try repository.saveCategory(category)
+            }
         }
-    }
-
-    /// Renames a category from its chip's inline field. Blank text cancels.
-    func commitRename(_ category: ClipboardCategory, to text: String) {
-        let name = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        renamingCategoryID = nil
-        guard !name.isEmpty else { return }
-        var renamed = category
-        renamed.name = name
-        perform("rename category") { try repository.saveCategory(renamed) }
-    }
-
-    func toggleSensitive(_ category: ClipboardCategory) {
-        var updated = category
-        updated.isSensitive.toggle()
-        perform("update category") { try repository.saveCategory(updated) }
     }
 
     /// Deletes a category; its items return to the normal history.
@@ -235,12 +296,6 @@ final class HistoryViewModel: ObservableObject {
         perform("delete category") {
             try repository.deleteCategory(id: category.id)
         }
-    }
-
-    func cancelEditing() {
-        editingLabelItemID = nil
-        isAddingCategory = false
-        renamingCategoryID = nil
     }
 
     /// Runs a repository change, then reloads. Failures are logged.

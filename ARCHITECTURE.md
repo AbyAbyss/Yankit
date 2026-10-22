@@ -164,7 +164,11 @@ CREATE TABLE category (
   id              TEXT PRIMARY KEY,         -- UUID
   name            TEXT NOT NULL,
   is_sensitive    INTEGER NOT NULL DEFAULT 0, -- 1 = redact content in the UI
-  created_at      DATETIME NOT NULL         -- chip order
+  created_at      DATETIME NOT NULL,
+  -- added in migration v3
+  color           TEXT NOT NULL DEFAULT '#7AB0FF', -- chip dot color
+  visible_characters INTEGER NOT NULL DEFAULT 4,   -- shown when sensitive
+  sort_order      INTEGER NOT NULL DEFAULT 0       -- chip order
 );
 
 CREATE INDEX idx_item_copied_at   ON clipboard_item(copied_at);
@@ -313,56 +317,74 @@ A borderless, non-activating `NSPanel` (so it does not steal focus from the app
 you were typing in — critical for the paste flow in §9). SwiftUI content via
 `NSHostingView`. Appears centered on the active screen.
 
-A **search field** sits at the top of the panel and holds focus when the panel
-opens — typing filters the list live across labels, text content, file names,
-and source app name (the content of sensitive items is never matched). Arrow keys still navigate the filtered results, so the fast path is:
-`⌘⇧V`, type a few letters, `Return`.
+The panel uses the user's accent (`AppAccent`: lime by default, or blue,
+purple, orange, pink, or the macOS accent) over system semantic colors, so it
+follows the Light/Dark/System setting.
 
-Below the search field a **chip bar** picks which slice of the history is shown:
+The **header** holds the search field, which keeps focus while the panel is open.
+Typing filters the list live across labels, text content, file names, source app
+name and category name (the content of sensitive items is never matched). Arrow
+keys still navigate the results, so the fast path is: `⌘⇧V`, type a few letters,
+`Return`. A gear button opens Settings.
 
-- **Recent** — every item, newest first (pinned items keep their time position).
-- **Pinned** — pinned items only.
-- One chip per **user category**, then a **+** chip to create one inline.
-  Right-clicking a category chip offers *Rename*, *Sensitive*, *Delete Category*.
+Below it a **chip bar** picks which slice of the history is shown:
 
-The panel opens on Recent, unless *Remember last selected tab* is on in Settings.
+- **Recent** — every item, newest first (pinned items keep their time position;
+  *Also show pinned items in Recent* can leave them out).
+- **Pinned** — pinned items only, with a count.
+- One chip per **user category** (color dot, lock if sensitive, count), then a
+  **+** button. Right-clicking a category chip offers *Edit Category…* and
+  *Delete Category*. `⇥` / `⇧⇥` cycle through the chips.
 
-Right-clicking a row offers *Pin/Unpin*, *Add/Edit Label*, *Move to Category*,
-and *Remove from History*. A row can also be **dragged onto a category chip**
-to move it there, or onto Recent to take it out of its category, and **`⌘M`**
-opens the *Move to Category* menu beside the selected row. Labels and category names are edited inline in the
-panel — a popover or alert would take key focus from the non-activating panel
-and dismiss it. Items in a **sensitive** category show only their first few
-characters (and no image thumbnail); pasting still uses the full content.
+The panel opens on Recent, unless *Remember last view* is on in Settings.
 
-Each row shows:
+**Rows** show an icon tile drawn for the item's kind (URL, code, terminal command,
+hex color, text, image thumbnail, PDF or file type, or a key for sensitive items;
+see `ItemPresentation`), the first line of content, then category, label, source
+app and time, a pin toggle, and the `⌘1`–`⌘9` hint. Items in a **sensitive**
+category show only their category's `visible_characters` (at most half the text)
+and no thumbnail; pasting still uses the full content.
 
-- **Text** — the `preview_text` snippet, kind icon, source app, relative time.
-- **Image** — the 128px thumbnail, dimensions, source app, relative time.
-- **File** — the system file icon, file name, source app, relative time.
-- A **label** line above the preview, when the item has one.
-- A **pin toggle** — pinned rows show a filled pin.
+Right-clicking a row opens a native menu: *Paste*, *Pin/Unpin*, *Move to
+Category ▸* (categories, then *New Category…*), *Add/Edit Label…*, *Delete*. A
+row can also be **dragged onto a category chip** to move it there, or onto Recent
+to take it out of its category.
 
-Interaction:
+**Preview pane (beta, off by default).** When on, the panel widens from 440 to
+880 pt and shows the selected item large: the full text, a terminal or browser
+card, the color with tints, the full image, or a QuickLook thumbnail for files.
+Below it are source, time, category and size, and *Paste*, *Pin* and *Move to…*
+buttons. Sensitive items stay redacted until *Peek* is clicked or `⌥` is held.
 
-- Arrow keys move the selection; **Return** pastes the selected item.
-- **Esc** dismisses the panel.
-- Clicking a row pastes it.
-- `1`–`9` paste the Nth item directly (quick-access).
-- `⌘P` (or clicking the pin) toggles pin on the selected item.
-- `⌘⌫` (or the row's delete button) removes the selected item from history.
-- `⌘M` opens the *Move to Category* menu for the selected item.
+The **label card** and the **category editor** (name, color, standard or
+sensitive, visible characters with a live preview) are drawn inside the panel: a
+popover, sheet or alert would take key focus from the non-activating panel and
+dismiss it. In Settings the same editor is a sheet.
+
+Keys:
+
+- Arrow keys move the selection (the list scrolls just enough to keep it
+  visible); **Return** (or a double-click) pastes the selected item. A single
+  click selects without scrolling, so a quick double-click lands on the row.
+- `⌘1`–`⌘9` paste the Nth visible item.
+- **Esc** closes an open card, else dismisses the panel.
+- `⌘P` pins or unpins; `⌘L` labels; `⌘M` opens *Move to Category* beside the
+  selected row; `⌘N` creates a category; `⌘⌫` deletes; `⌘K` focuses search.
+- `⇥` / `⇧⇥` switch chips; holding `⌥` peeks at a sensitive item.
 
 ### 8.3 Settings window — `SettingsView`
 
 A standard SwiftUI `Settings` scene with tabs:
 
-- **General** — launch at login toggle; max items stepper (1–100, default 30);
-  the `⌘⇧V` shortcut recorder (rebindable); a *History Panel* section with
-  *Remember last selected tab* (off by default), the panel *Style* (Glass and
-  Clear Glass on macOS 26+, Translucent everywhere), and an *Opacity* slider
-  that layers the window background color over the material.
-- **Categories** — create, rename, mark sensitive, and delete categories.
+- **General** — *Remember last view* (off by default); *Also show pinned items
+  in Recent* (on by default); *Show preview pane* (beta, off by default); launch
+  at login; max items stepper (1–100, default 30); the `⌘⇧V` shortcut recorder.
+- **Appearance** — theme (System/Light/Dark); accent color; panel material (Liquid Glass and
+  Frosted Glass on macOS 26+, Translucent, Solid); an *Opacity* slider that layers the window
+  background color over the material; a live preview drawn with the same
+  material.
+- **Categories** — the built-in chips, then the user's categories with type,
+  item count, edit and delete; drag to reorder.
 - **Excluded Apps** — list of apps whose copies are ignored; an "Add…" button
   opens a picker over `/Applications`. Empty by default = capture everything.
 - **Privacy** — ignore concealed/transient pasteboard content (on by default);
@@ -482,8 +504,11 @@ Yankit/
 | `maxCaptureBytes`     | Int        | `10 MB` | Skip captures larger than this |
 | `rememberHistoryFilter`| Bool      | `false` | Reopen the panel on the last selected chip |
 | `lastHistoryFilter`   | String     | `""`    | Last selected chip (`recent`, `pinned`, `category:<id>`) |
-| `panelMaterial`       | String     | `translucent` | `glass`, `clearGlass` (macOS 26+), or `translucent` |
+| `panelMaterial`       | String     | `translucent` | `clearGlass` (Liquid Glass) or `glass` (Frosted Glass), macOS 26+; `translucent`; `solid` |
 | `panelOpacity`        | Double     | `0`     | Window-background tint over the material (0–1) |
+| `accent`              | String     | `lime`  | `lime`, `blue`, `purple`, `orange`, `pink`, or `system` |
+| `showPinnedInRecent`  | Bool       | `true`  | Recent includes pinned items |
+| `showPreviewPane`     | Bool       | `false` | Beta: widen the panel with a preview pane |
 | `captureImages`       | Bool       | `true`  | Master toggle for image capture |
 | `captureFiles`        | Bool       | `true`  | Master toggle for file capture |
 | (hotkey)              | —          | `⌘⇧V`   | Managed by KeyboardShortcuts |
