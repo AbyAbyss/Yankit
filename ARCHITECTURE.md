@@ -364,8 +364,10 @@ dismiss it. In Settings the same editor is a sheet.
 Keys:
 
 - Arrow keys move the selection (the list scrolls just enough to keep it
-  visible); **Return** (or a double-click) pastes the selected item. A single
-  click selects without scrolling, so a quick double-click lands on the row.
+  visible); **Return** pastes the selected item.
+- Clicking a row pastes it. With the preview pane on, a click selects it
+  instead (so it can be previewed) and a double-click pastes; clicks never
+  scroll the list, so a quick double-click lands on the row.
 - `⌘1`–`⌘9` paste the Nth visible item.
 - **Esc** closes an open card, else dismisses the panel.
 - `⌘P` pins or unpins; `⌘L` labels; `⌘M` opens *Move to Category* beside the
@@ -377,12 +379,12 @@ Keys:
 A standard SwiftUI `Settings` scene with tabs:
 
 - **General** — *Remember last view* (off by default); *Also show pinned items
-  in Recent* (on by default); *Show preview pane* (beta, off by default); launch
-  at login; max items stepper (1–100, default 30); the `⌘⇧V` shortcut recorder.
-- **Appearance** — theme (System/Light/Dark); accent color; panel material (Liquid Glass and
+  in Recent* (on by default); launch at login; max items stepper (1–100, default 30); the `⌘⇧V` shortcut recorder.
+- **Appearance** — theme (System/Light/Dark); accent color; *Show preview pane*
+  (beta, off by default); panel material (Liquid Glass and
   Frosted Glass on macOS 26+, Translucent, Solid); an *Opacity* slider that layers the window
   background color over the material; a live preview drawn with the same
-  material.
+  material and layout (it shows the split view while the preview pane is on).
 - **Categories** — the built-in chips, then the user's categories with type,
   item count, edit and delete; drag to reorder.
 - **Excluded Apps** — list of apps whose copies are ignored; an "Add…" button

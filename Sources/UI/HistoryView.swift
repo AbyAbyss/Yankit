@@ -236,7 +236,9 @@ struct HistoryView: View {
         }
     }
 
-    /// One row. A click selects it; a double-click pastes it.
+    /// One row. Without the preview pane a click pastes it, as before. With
+    /// the pane a click selects it (so it can be previewed) and a
+    /// double-click pastes it; Return pastes in both.
     private func row(_ item: ClipboardItem, index: Int) -> some View {
         HistoryRowView(
             presentation: viewModel.presentation(of: item),
@@ -245,8 +247,16 @@ struct HistoryView: View {
             shortcutNumber: index < 9 ? index + 1 : nil,
             onTogglePin: { viewModel.togglePin(item) }
         )
-        .onTapGesture(count: 2) { onSelectItem(item) }
-        .simultaneousGesture(TapGesture().onEnded { viewModel.selectedIndex = index })
+        .onTapGesture(count: 2) {
+            if isWide { onSelectItem(item) }
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            if isWide {
+                viewModel.selectedIndex = index
+            } else {
+                onSelectItem(item)
+            }
+        })
         .contextMenu { rowMenu(for: item) }
         .draggable(DraggedHistoryItem(id: item.id))
         .background {

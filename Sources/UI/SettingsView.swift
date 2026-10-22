@@ -142,20 +142,6 @@ private struct GeneralSettingsTab: View {
                     Text("They stay in time order with a pin badge, never stacked at the top.")
                 }
             }
-            Section("Preview pane") {
-                Toggle(isOn: $preferences.showPreviewPane) {
-                    HStack(spacing: 6) {
-                        Text("Show preview pane")
-                        Text("BETA")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundStyle(accent.onFill)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(accent.fill))
-                    }
-                    Text("Widens the panel with a large preview of the selected item, its details and actions.")
-                }
-            }
             Section("General") {
                 Toggle("Launch Yankit at login", isOn: Binding(
                     get: { LoginItemManager.isEnabled },
@@ -239,6 +225,7 @@ private struct AppearanceSettingsTab: View {
                         .labelsHidden()
                     }
                     group("Accent") { accentPicker }
+                    group("Layout") { previewPaneToggle }
                     group("Material") {
                         VStack(spacing: 6) {
                             ForEach(PanelMaterial.allCases) { materialCard($0) }
@@ -284,6 +271,34 @@ private struct AppearanceSettingsTab: View {
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(Color.primary.opacity(0.07), lineWidth: 1)
             )
+    }
+
+    /// The beta preview pane switch. The live preview on the right shows
+    /// the split layout while it is on.
+    private var previewPaneToggle: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Text("Show preview pane")
+                    .font(.system(size: 13.5, weight: .semibold))
+                Text("BETA")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundStyle(accent.onFill)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(accent.fill))
+                Spacer()
+                Toggle("Show preview pane", isOn: $preferences.showPreviewPane)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+            Text("Widens the panel with a large preview of the selected item. A click then selects an item so you can look at it first; double-click or press Return to paste. With the preview off, a single click pastes.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(groupBackground)
     }
 
     /// One chip per accent, wrapped over two rows.
@@ -516,23 +531,20 @@ private struct AppearancePreview: View {
                         ))
                 }
             }
-            ForEach(Self.rows.indices, id: \.self) { index in
-                HStack(spacing: 8) {
-                    ItemTile(style: Self.rows[index].style, thumbnail: nil)
-                        .scaleEffect(0.5)
-                        .frame(width: 22, height: 22)
-                    Text(Self.rows[index].text)
-                        .font(.system(
-                            size: 10.5, weight: .semibold,
-                            design: index == 0 ? .default : .monospaced
-                        ))
-                        .lineLimit(1)
+            if preferences.showPreviewPane {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(spacing: 2) {
+                        ForEach(Self.rows.indices, id: \.self) { mockRow($0, textSize: 9) }
+                    }
+                    .frame(width: 96)
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.1))
+                        .frame(width: 1)
+                    mockPreview
                 }
-                .padding(5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 8).fill(
-                    Color.primary.opacity(index == 0 ? 0.1 : 0)
-                ))
+                .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(Self.rows.indices, id: \.self) { mockRow($0, textSize: 10.5) }
             }
         }
         .padding(10)
@@ -544,6 +556,58 @@ private struct AppearancePreview: View {
         ))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.45), radius: 20, y: 18)
+    }
+
+    /// A list row; the first one is selected.
+    private func mockRow(_ index: Int, textSize: CGFloat) -> some View {
+        HStack(spacing: 6) {
+            ItemTile(style: Self.rows[index].style, thumbnail: nil)
+                .scaleEffect(0.5)
+                .frame(width: 22, height: 22)
+            Text(Self.rows[index].text)
+                .font(.system(
+                    size: textSize, weight: .semibold,
+                    design: index == 0 ? .default : .monospaced
+                ))
+                .lineLimit(1)
+        }
+        .padding(5)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8).fill(
+            Color.primary.opacity(index == 0 ? 0.1 : 0)
+        ))
+    }
+
+    /// A small version of the preview pane, showing the selected link.
+    private var mockPreview: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 2.5) {
+                    Circle().fill(Color(hex: "#FF5F57")).frame(width: 4, height: 4)
+                    Circle().fill(Color(hex: "#FEBC2E")).frame(width: 4, height: 4)
+                    Circle().fill(Color(hex: "#28C840")).frame(width: 4, height: 4)
+                }
+                Spacer(minLength: 0)
+                Text("github.com")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .padding(7)
+            .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 7).fill(Color(hex: "#10141C")))
+            Text(Self.rows[0].text)
+                .font(.system(size: 9, weight: .semibold))
+                .lineLimit(1)
+            Text("Safari · now")
+                .font(.system(size: 8.5))
+                .foregroundStyle(.secondary)
+            Text("Paste ⏎")
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(accent.onFill)
+                .frame(maxWidth: .infinity, minHeight: 18)
+                .background(RoundedRectangle(cornerRadius: 5).fill(accent.fill))
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
