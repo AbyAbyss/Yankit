@@ -1,42 +1,50 @@
 # Releasing Yankit
 
-Yankit uses [Semantic Versioning](https://semver.org) and **tag-driven
-releases**: you push a version tag, and GitHub Actions builds, tests, packages,
-and publishes the release for you.
+Yankit uses [Semantic Versioning](https://semver.org). The version lives in one
+place, `MARKETING_VERSION` in `project.yml`. It is what Settings → About shows,
+and GitHub Actions releases exactly that version — triggered by pushing its tag
+or by a button.
 
 ## Versioning
 
 Versions are `MAJOR.MINOR.PATCH`, and release tags are that version prefixed
 with `v` — for example `v1.4.0`.
 
-- **MAJOR** — incompatible changes (data format, removed features).
-- **MINOR** — new features, backwards compatible.
-- **PATCH** — bug fixes only.
+Starting from `1.3.0`, bump by the size of the change:
 
-You never hand-edit the version for a release — the build reads it from the tag.
-The `MARKETING_VERSION` in `project.yml` is just the placeholder used for local
-development builds.
+- **PATCH** — `1.3.0` → `1.3.1` → `1.3.2`: bug fixes and small tweaks.
+- **MINOR** — `1.3.x` → `1.4.0`: a significant change or new feature, still
+  compatible with existing data and settings. Resets PATCH to 0.
+- **MAJOR** — `1.x.y` → `2.0.0`: a major change, e.g. a redesign, an
+  incompatible data format, or removed features. Resets MINOR and PATCH to 0.
 
 ## Cutting a release
 
-Once `main` is in good shape:
+1. **Bump the version.** Set `MARKETING_VERSION` in `project.yml` (e.g. to
+   `"1.4.0"`) and merge that to `main` with the changes it ships. Local builds
+   then show the new version in Settings → About too.
+2. **Release it**, either way:
+   - **Button:** GitHub → **Actions** → **Release** → **Run workflow** on `main`.
+     The `v1.4.0` tag is created for you. The run stops if the tag already
+     exists (you forgot to bump) or if it isn't started from `main`.
+   - **Tag:**
+     ```sh
+     git checkout main && git pull
+     git tag v1.4.0
+     git push origin v1.4.0
+     ```
+     The run stops if the tag doesn't match `MARKETING_VERSION`.
 
-```sh
-git checkout main && git pull
-git tag v1.4.0
-git push origin v1.4.0
-```
-
-Pushing the tag triggers [`.github/workflows/release.yml`](../.github/workflows/release.yml),
+Either trigger runs [`.github/workflows/release.yml`](../.github/workflows/release.yml),
 which:
 
-1. Checks out the tagged commit.
+1. Checks out the commit and reads the version from `project.yml`.
 2. Generates the Xcode project with XcodeGen.
 3. Runs the unit tests — a failure here stops the release.
-4. Builds `Yankit.app` in Release configuration, stamped with the tag's version.
+4. Builds `Yankit.app` in Release configuration with that version.
 5. Packages it into `Yankit-1.4.0.dmg` with a drag-to-Applications layout.
-6. Creates a GitHub Release for the tag, attaches the DMG, and auto-generates
-   notes from the commits since the previous tag.
+6. Creates the GitHub Release (and the tag, for a button run), attaches the
+   DMG, and auto-generates notes from the commits since the previous tag.
 
 Watch it under the repository's **Actions** tab; when it finishes, the release
 is live on the **Releases** page.
@@ -217,7 +225,8 @@ file there and follow its contribution checklist.
 - [ ] User-facing changes show up clearly in commit messages — they become the
       release notes.
 - [ ] Decide the version bump: major, minor, or patch.
-- [ ] `git tag vX.Y.Z && git push origin vX.Y.Z`.
+- [ ] Set `MARKETING_VERSION` in `project.yml` and merge to `main`.
+- [ ] Click **Run workflow**, or `git tag vX.Y.Z && git push origin vX.Y.Z`.
 - [ ] Watch the **Actions** run finish green.
 - [ ] Check the **Releases** page — DMG attached, notes look right.
 - [ ] If you maintain a Homebrew tap, bump `version` + `sha256` in the cask.

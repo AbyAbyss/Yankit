@@ -1,11 +1,15 @@
 name: Release
 
-# Tag-driven releases. Push a version tag to build and publish:
-#   git tag v1.2.0 && git push origin v1.2.0
+# Releases the version in project.yml (MARKETING_VERSION). Either:
+#   - push its tag:  git tag v1.3.0 && git push origin v1.3.0
+#   - or click "Run workflow" on the Actions tab (from main); the tag is
+#     created for you.
+# See docs/RELEASING.md.
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -27,8 +31,28 @@ jobs:
         with:
           xcode-version: latest-stable
 
-      - name: Derive version from tag
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      # project.yml is the single source of the version, so the release,
+      # its tag, and Settings → About always agree.
+      - name: Read version from project.yml
+        run: |
+          VERSION=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' project.yml)
+          TAG="v$VERSION"
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_NAME" != "$TAG" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match MARKETING_VERSION $VERSION in project.yml"
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::Run the release from main, not $GITHUB_REF_NAME"
+              exit 1
+            fi
+            if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+              echo "::error::$TAG already exists. Bump MARKETING_VERSION in project.yml first."
+              exit 1
+            fi
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -51,7 +75,6 @@ jobs:
             -scheme Yankit \
             -configuration Release \
             -derivedDataPath build \
-            MARKETING_VERSION="$VERSION" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
@@ -71,11 +94,14 @@ jobs:
             -ov -format UDZO \
             "Yankit-${VERSION}.dmg"
 
+      # For a button run the tag doesn't exist yet; --target creates it on
+      # the commit that was built.
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$TAG" \
             "Yankit-${VERSION}.dmg" \
+            --target "$GITHUB_SHA" \
             --title "Yankit $VERSION" \
             --generate-notes
