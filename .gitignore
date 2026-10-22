@@ -22,3 +22,6 @@ Package.resolved
 *.sqlite-shm
 *.sqlite-wal
 CLAUDE.md
+
+# Launch-video work files (kept locally, not in the repo)
+brag-output/
