@@ -75,6 +75,20 @@ enum AppDatabase {
                 on: "clipboard_item", columns: ["content_hash"]
             )
         }
+        migrator.registerMigration("v2_categories_and_labels") { db in
+            try db.create(table: "category") { t in
+                t.column("id", .text).primaryKey()
+                t.column("name", .text).notNull()
+                t.column("is_sensitive", .boolean).notNull().defaults(to: false)
+                t.column("created_at", .datetime).notNull()
+            }
+            try db.alter(table: "clipboard_item") { t in
+                // Deleting a category returns its items to normal history.
+                t.add(column: "category_id", .text)
+                    .references("category", onDelete: .setNull)
+                t.add(column: "label", .text)
+            }
+        }
         return migrator
     }
 

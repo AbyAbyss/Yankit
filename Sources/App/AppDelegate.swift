@@ -56,7 +56,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
 
             let panelController = HistoryPanelController(
-                repository: repository, blobStore: blobStore
+                repository: repository,
+                blobStore: blobStore,
+                preferences: preferences
             )
             panelController.onSelect = { [weak pasteService] item, targetApp in
                 pasteService?.paste(item, into: targetApp)

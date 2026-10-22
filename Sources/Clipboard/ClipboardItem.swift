@@ -39,6 +39,10 @@ struct ClipboardItem: Codable, Identifiable, Equatable {
     var sourceBundleID: String? = nil
     var sourceAppName: String? = nil
 
+    // Organization — set by the user from the history panel.
+    var categoryID: String? = nil
+    var label: String? = nil
+
     /// Maps Swift's camelCase properties to the snake_case database columns.
     enum CodingKeys: String, CodingKey {
         case id
@@ -57,6 +61,8 @@ struct ClipboardItem: Codable, Identifiable, Equatable {
         case fileName = "file_name"
         case sourceBundleID = "source_bundle_id"
         case sourceAppName = "source_app_name"
+        case categoryID = "category_id"
+        case label
     }
 }
 

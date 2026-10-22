@@ -1,14 +1,18 @@
 import AppKit
 import SwiftUI
 
-/// One row in the history list: a per-kind preview, a pin toggle, and a
-/// delete control. See ARCHITECTURE.md §8.2.
+/// One row in the history list: an optional label, a per-kind preview
+/// (redacted for sensitive items), a pin toggle, and a delete control.
+/// See ARCHITECTURE.md §8.2.
 struct HistoryRowView: View {
     let item: ClipboardItem
     let thumbnail: NSImage?
     let isSelected: Bool
+    let isSensitive: Bool
+    let isEditingLabel: Bool
     var onTogglePin: () -> Void
     var onDelete: () -> Void
+    var onCommitLabel: (String) -> Void
 
     @State private var isHovering = false
 
@@ -17,9 +21,21 @@ struct HistoryRowView: View {
             icon
                 .frame(width: 40, height: 40)
             VStack(alignment: .leading, spacing: 2) {
+                if isEditingLabel {
+                    InlineTextField(
+                        initialText: item.label ?? "",
+                        placeholder: "Label",
+                        onCommit: onCommitLabel
+                    )
+                    .font(.system(size: 13, weight: .semibold))
+                } else if let label = item.label {
+                    Text(label)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                }
                 Text(primaryText)
                     .font(.system(size: 13))
-                    .lineLimit(2)
+                    .lineLimit(hasLabelLine ? 1 : 2)
                 Text(secondaryText)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -47,13 +63,16 @@ struct HistoryRowView: View {
     /// so the row stays uncluttered but the action is always reachable.
     private var showsDelete: Bool { isHovering || isSelected }
 
+    private var hasLabelLine: Bool { isEditingLabel || item.label != nil }
+
     // MARK: - Icon
 
-    /// Images show their real thumbnail; everything else — and images whose
-    /// thumbnail could not be generated — shows a colored type badge.
+    /// Images show their real thumbnail; everything else — sensitive images,
+    /// and images whose thumbnail could not be generated — shows a colored
+    /// type badge.
     @ViewBuilder
     private var icon: some View {
-        if item.kind == .image, let thumbnail {
+        if item.kind == .image, let thumbnail, !isSensitive {
             Image(nsImage: thumbnail)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -180,15 +199,24 @@ struct HistoryRowView: View {
         switch item.kind {
         case .text:
             let raw = item.previewText ?? item.textContent ?? ""
-            return raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            return isSensitive ? Self.redacted(text) : text
         case .image:
             if let width = item.pixelWidth, let height = item.pixelHeight {
                 return "Image · \(width) × \(height)"
             }
             return "Image"
         case .file:
-            return item.fileName ?? "File"
+            let name = item.fileName ?? "File"
+            return isSensitive ? Self.redacted(name) : name
         }
+    }
+
+    /// Keeps the first few characters — at most half, so short secrets stay
+    /// mostly hidden — and masks the rest.
+    private static func redacted(_ text: String) -> String {
+        let visible = min(4, text.count / 2)
+        return text.prefix(visible) + String(repeating: "•", count: 8)
     }
 
     private var secondaryText: String {

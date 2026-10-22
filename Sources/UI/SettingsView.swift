@@ -59,6 +59,8 @@ struct SettingsView: View {
         switch selection {
         case .general:
             GeneralSettingsTab(preferences: preferences, repository: repository)
+        case .categories:
+            CategoriesSettingsTab(repository: repository)
         case .excludedApps:
             ExcludedAppsTab(preferences: preferences)
         case .privacy:
@@ -72,13 +74,14 @@ struct SettingsView: View {
 }
 
 private enum SettingsTab: String, CaseIterable, Identifiable {
-    case general, excludedApps, privacy, storage, about
+    case general, categories, excludedApps, privacy, storage, about
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .general: "General"
+        case .categories: "Categories"
         case .excludedApps: "Excluded Apps"
         case .privacy: "Privacy"
         case .storage: "Storage"
@@ -89,6 +92,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .general: "gearshape"
+        case .categories: "tag"
         case .excludedApps: "nosign"
         case .privacy: "hand.raised"
         case .storage: "internaldrive"
@@ -126,8 +130,95 @@ private struct GeneralSettingsTab: View {
             LabeledContent("Open history shortcut") {
                 KeyboardShortcuts.Recorder(for: .toggleHistory)
             }
+            Section("History Panel") {
+                Toggle(isOn: $preferences.rememberHistoryFilter) {
+                    Text("Remember last selected tab")
+                    Text("When off, history always opens on Recent.")
+                }
+                Picker("Style", selection: $preferences.panelMaterial) {
+                    ForEach(PanelMaterial.available) { material in
+                        Text(material.title).tag(material)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Slider(value: $preferences.panelOpacity, in: 0...1) {
+                    Text("Opacity")
+                } minimumValueLabel: {
+                    Text("Less")
+                } maximumValueLabel: {
+                    Text("More")
+                }
+            }
         }
         .formStyle(.grouped)
+    }
+}
+
+// MARK: - Categories
+
+private struct CategoriesSettingsTab: View {
+    let repository: ClipboardRepository
+    @State private var categories: [ClipboardCategory] = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Categories appear as tabs in the history panel. Items moved "
+                 + "into one are kept until you remove them. Sensitive "
+                 + "categories show only the first few characters of each item.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            List {
+                if categories.isEmpty {
+                    Text("No categories")
+                        .foregroundStyle(.tertiary)
+                }
+                ForEach($categories) { $category in
+                    HStack {
+                        TextField("Name", text: $category.name)
+                            .textFieldStyle(.plain)
+                        Toggle("Sensitive", isOn: $category.isSensitive)
+                        Button {
+                            delete(category)
+                        } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .onChange(of: category) { _, updated in save(updated) }
+                }
+            }
+            .frame(maxHeight: .infinity)
+
+            Button("Add Category") { add() }
+        }
+        .padding()
+        .onAppear { reload() }
+    }
+
+    private func reload() {
+        categories = (try? repository.allCategories()) ?? []
+    }
+
+    private func add() {
+        try? repository.saveCategory(ClipboardCategory(name: "New Category"))
+        reload()
+    }
+
+    /// Saves each edit as it happens; a blank name is not saved, so the
+    /// category keeps its last non-blank name.
+    private func save(_ category: ClipboardCategory) {
+        guard !category.name
+            .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return }
+        try? repository.saveCategory(category)
+    }
+
+    /// Deletes a category; its items return to the normal history.
+    private func delete(_ category: ClipboardCategory) {
+        try? repository.deleteCategory(id: category.id)
+        reload()
     }
 }
 

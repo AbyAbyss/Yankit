@@ -169,6 +169,83 @@ final class StorageTests: XCTestCase {
         XCTAssertEqual(try repository.allItems().first?.pinned, true)
     }
 
+    // MARK: - Ordering
+
+    func testAllItemsAreNewestFirstEvenWhenPinned() throws {
+        try repository.insert(
+            textItem("old pinned",
+                     copiedAt: Date(timeIntervalSinceNow: -100),
+                     pinned: true),
+            maxItems: 30
+        )
+        try repository.insert(textItem("new"), maxItems: 30)
+
+        XCTAssertEqual(
+            try repository.allItems().compactMap(\.textContent),
+            ["new", "old pinned"]
+        )
+    }
+
+    // MARK: - Categories & labels
+
+    func testCategorizedItemsSurviveEvictionAndExpiry() throws {
+        let category = ClipboardCategory(name: "Keys")
+        try repository.saveCategory(category)
+        var kept = textItem("kept",
+                            copiedAt: Date(timeIntervalSinceNow: -10 * 86_400))
+        kept.categoryID = category.id
+        try repository.insert(kept, maxItems: 1)
+        for i in 0..<3 {
+            try repository.insert(
+                textItem("u\(i)",
+                         copiedAt: Date(timeIntervalSinceNow: Double(i))),
+                maxItems: 1
+            )
+        }
+        try repository.expireItems(olderThanDays: 7)
+
+        let texts = Set(try repository.allItems().compactMap(\.textContent))
+        XCTAssertEqual(texts, ["kept", "u2"], "1 evictable (cap) + 1 categorized")
+    }
+
+    func testDeletingCategoryReturnsItemsToHistory() throws {
+        let category = ClipboardCategory(name: "Temp")
+        try repository.saveCategory(category)
+        let item = textItem("x")
+        try repository.insert(item, maxItems: 30)
+        try repository.setCategory(category.id, id: item.id)
+
+        try repository.deleteCategory(id: category.id)
+
+        XCTAssertEqual(try repository.allCategories(), [])
+        let stored = try XCTUnwrap(repository.allItems().first)
+        XCTAssertNil(stored.categoryID, "Item is kept, just uncategorized")
+    }
+
+    func testSaveCategoryUpdatesExistingCategory() throws {
+        var category = ClipboardCategory(name: "Keys")
+        try repository.saveCategory(category)
+        category.name = "API Keys"
+        category.isSensitive = true
+        try repository.saveCategory(category)
+
+        let stored = try repository.allCategories()
+        XCTAssertEqual(stored.count, 1)
+        XCTAssertEqual(stored.first?.name, "API Keys")
+        XCTAssertEqual(stored.first?.isSensitive, true)
+    }
+
+    func testSetLabelUpdatesItem() throws {
+        let item = textItem("sk-123")
+        try repository.insert(item, maxItems: 30)
+
+        try repository.setLabel("OpenAI key", id: item.id)
+        XCTAssertEqual(try repository.allItems().first?.label, "OpenAI key")
+
+        try repository.setLabel(nil, id: item.id)
+        XCTAssertNil(try repository.allItems().first?.label)
+    }
+
     // MARK: - Clear
 
     func testDeleteAllClearsRowsAndBlobs() throws {

@@ -16,6 +16,7 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
 
     private let repository: ClipboardRepository
     private let blobStore: BlobStore
+    private let preferences: Preferences
 
     private var panel: HistoryPanel?
     private var viewModel: HistoryViewModel?
@@ -25,9 +26,14 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
 
     private static let panelSize = NSSize(width: 420, height: 520)
 
-    init(repository: ClipboardRepository, blobStore: BlobStore) {
+    init(
+        repository: ClipboardRepository,
+        blobStore: BlobStore,
+        preferences: Preferences
+    ) {
         self.repository = repository
         self.blobStore = blobStore
+        self.preferences = preferences
         super.init()
     }
 
@@ -44,12 +50,14 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         targetApp = NSWorkspace.shared.frontmostApplication
 
         let viewModel = HistoryViewModel(
-            repository: repository, blobStore: blobStore
+            repository: repository, blobStore: blobStore, preferences: preferences
         )
         viewModel.reload()
         self.viewModel = viewModel
 
-        let view = HistoryView(viewModel: viewModel) { [weak self] item in
+        let view = HistoryView(
+            viewModel: viewModel, preferences: preferences
+        ) { [weak self] item in
             self?.select(item)
         }
 
@@ -121,6 +129,50 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         )
     }
 
+    /// Opens the "Move to Category" menu beside the selected row. Choosing
+    /// the checked category takes the item out of it, matching the row's
+    /// context menu.
+    private func showMoveMenu() {
+        guard let viewModel,
+              let item = viewModel.selectedItem,
+              let rowFrame = viewModel.selectedRowFrame,
+              let view = panel?.contentView,
+              !viewModel.categories.isEmpty
+        else { return }
+
+        let menu = NSMenu(title: "Move to Category")
+        for category in viewModel.categories {
+            let menuItem = NSMenuItem(
+                title: category.name,
+                action: #selector(moveSelectedItem(_:)),
+                keyEquivalent: ""
+            )
+            menuItem.target = self
+            menuItem.representedObject = category.id
+            menuItem.state = item.categoryID == category.id ? .on : .off
+            menu.addItem(menuItem)
+        }
+        // The frame is in SwiftUI's top-left-origin window coordinates.
+        let y = view.isFlipped
+            ? rowFrame.maxY
+            : view.bounds.height - rowFrame.maxY
+        menu.popUp(
+            positioning: nil,
+            at: NSPoint(x: rowFrame.minX + 50, y: y),
+            in: view
+        )
+    }
+
+    @objc private func moveSelectedItem(_ sender: NSMenuItem) {
+        guard let viewModel,
+              let item = viewModel.selectedItem,
+              let categoryID = sender.representedObject as? String
+        else { return }
+        viewModel.setCategory(
+            item.categoryID == categoryID ? nil : categoryID, for: item
+        )
+    }
+
     private func installKeyMonitor() {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
@@ -137,9 +189,15 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
     }
 
     /// Handles list-navigation keys. Returns nil to consume the event, or the
-    /// event itself to let it reach the search field.
+    /// event itself to let it reach the search field. During an inline edit
+    /// every key goes to the edit field, except Escape, which cancels it.
     private func handleKeyDown(_ event: NSEvent) -> NSEvent? {
         guard panel?.isVisible == true, let viewModel else { return event }
+        if viewModel.isEditing {
+            guard event.keyCode == 53 else { return event }
+            viewModel.cancelEditing()
+            return nil
+        }
         switch event.keyCode {
         case 125:                       // down arrow
             viewModel.moveSelection(1)
@@ -159,6 +217,9 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
             if let item = viewModel.selectedItem {
                 viewModel.delete(item)
             }
+            return nil
+        case 46 where event.modifierFlags.contains(.command):  // ⌘M
+            showMoveMenu()
             return nil
         default:
             return event

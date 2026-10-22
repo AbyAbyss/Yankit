@@ -13,7 +13,8 @@ permissions:
 jobs:
   release:
     name: Build & publish
-    runs-on: macos-14
+    # Needs an Xcode with the macOS 26 SDK (Liquid Glass panel background).
+    runs-on: macos-15
 
     steps:
       - name: Check out

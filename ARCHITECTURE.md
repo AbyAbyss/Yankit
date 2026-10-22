@@ -125,7 +125,7 @@ with `0600`, and the whole directory is marked `isExcludedFromBackup` and
 excluded from Spotlight indexing — so clipboard history is not silently copied
 into Time Machine snapshots or search indexes.
 
-### 4.2 Schema — one table
+### 4.2 Schema — two tables
 
 ```sql
 CREATE TABLE clipboard_item (
@@ -152,7 +152,19 @@ CREATE TABLE clipboard_item (
 
   -- provenance (drives the app-exclusion feature)
   source_bundle_id TEXT,
-  source_app_name  TEXT
+  source_app_name  TEXT,
+
+  -- organization (added in migration v2)
+  category_id     TEXT REFERENCES category(id) ON DELETE SET NULL,
+  label           TEXT                      -- user label, e.g. "OpenAI key"
+);
+
+-- User-created categories, shown as chips in the history panel (v2).
+CREATE TABLE category (
+  id              TEXT PRIMARY KEY,         -- UUID
+  name            TEXT NOT NULL,
+  is_sensitive    INTEGER NOT NULL DEFAULT 0, -- 1 = redact content in the UI
+  created_at      DATETIME NOT NULL         -- chip order
 );
 
 CREATE INDEX idx_item_copied_at   ON clipboard_item(copied_at);
@@ -251,9 +263,10 @@ item correctly moves it to the top instead of creating a duplicate.
 **Eviction.** Immediately after every insert:
 
 ```
-count = SELECT COUNT(*) FROM clipboard_item WHERE pinned = 0
+count = SELECT COUNT(*) FROM clipboard_item
+        WHERE pinned = 0 AND category_id IS NULL
 if count > Preferences.maxItems:
-    for each surplus UNPINNED row, oldest copied_at first:
+    for each surplus EVICTABLE row, oldest copied_at first:
         delete blob_path and thumbnail_path files from disk (if any)
         DELETE the row
     all inside one transaction
@@ -262,13 +275,16 @@ if count > Preferences.maxItems:
 **Pinned items are exempt from eviction and do not count toward `maxItems`** —
 the cap governs only the unpinned, auto-managed portion of the history. This is
 what makes a low cap like 30 safe: anything you care about, you pin.
+**Items in a category are exempt the same way.** Deleting a category keeps its
+items but clears their `category_id`, so they rejoin the evictable history.
 
 Eviction also runs **when the user lowers `maxItems`** in Settings, so the
 history shrinks immediately.
 
 **Auto-expire (TTL).** If `Preferences.autoExpireDays` is greater than zero, a
 daily sweep deletes unpinned items older than that many days regardless of the
-count cap — this bounds how long a copied secret can linger. Off by default.
+count cap — this bounds how long a copied secret can linger. Pinned and
+categorized items are exempt. Off by default.
 
 ---
 
@@ -298,16 +314,34 @@ you were typing in — critical for the paste flow in §9). SwiftUI content via
 `NSHostingView`. Appears centered on the active screen.
 
 A **search field** sits at the top of the panel and holds focus when the panel
-opens — typing filters the list live across text content, file names, and source
-app name. Arrow keys still navigate the filtered results, so the fast path is:
+opens — typing filters the list live across labels, text content, file names,
+and source app name (the content of sensitive items is never matched). Arrow keys still navigate the filtered results, so the fast path is:
 `⌘⇧V`, type a few letters, `Return`.
+
+Below the search field a **chip bar** picks which slice of the history is shown:
+
+- **Recent** — every item, newest first (pinned items keep their time position).
+- **Pinned** — pinned items only.
+- One chip per **user category**, then a **+** chip to create one inline.
+  Right-clicking a category chip offers *Rename*, *Sensitive*, *Delete Category*.
+
+The panel opens on Recent, unless *Remember last selected tab* is on in Settings.
+
+Right-clicking a row offers *Pin/Unpin*, *Add/Edit Label*, *Move to Category*,
+and *Remove from History*. A row can also be **dragged onto a category chip**
+to move it there, or onto Recent to take it out of its category, and **`⌘M`**
+opens the *Move to Category* menu beside the selected row. Labels and category names are edited inline in the
+panel — a popover or alert would take key focus from the non-activating panel
+and dismiss it. Items in a **sensitive** category show only their first few
+characters (and no image thumbnail); pasting still uses the full content.
 
 Each row shows:
 
 - **Text** — the `preview_text` snippet, kind icon, source app, relative time.
 - **Image** — the 128px thumbnail, dimensions, source app, relative time.
 - **File** — the system file icon, file name, source app, relative time.
-- A **pin toggle** — pinned rows show a filled pin and sort above the rest.
+- A **label** line above the preview, when the item has one.
+- A **pin toggle** — pinned rows show a filled pin.
 
 Interaction:
 
@@ -317,13 +351,18 @@ Interaction:
 - `1`–`9` paste the Nth item directly (quick-access).
 - `⌘P` (or clicking the pin) toggles pin on the selected item.
 - `⌘⌫` (or the row's delete button) removes the selected item from history.
+- `⌘M` opens the *Move to Category* menu for the selected item.
 
 ### 8.3 Settings window — `SettingsView`
 
 A standard SwiftUI `Settings` scene with tabs:
 
 - **General** — launch at login toggle; max items stepper (1–100, default 30);
-  the `⌘⇧V` shortcut recorder (rebindable).
+  the `⌘⇧V` shortcut recorder (rebindable); a *History Panel* section with
+  *Remember last selected tab* (off by default), the panel *Style* (Glass and
+  Clear Glass on macOS 26+, Translucent everywhere), and an *Opacity* slider
+  that layers the window background color over the material.
+- **Categories** — create, rename, mark sensitive, and delete categories.
 - **Excluded Apps** — list of apps whose copies are ignored; an "Add…" button
   opens a picker over `/Applications`. Empty by default = capture everything.
 - **Privacy** — ignore concealed/transient pasteboard content (on by default);
@@ -441,6 +480,10 @@ Yankit/
 | `pausedUntil`         | Date?      | `nil`   | Capture paused until this time (`nil` = active) |
 | `autoExpireDays`      | Int        | `0`     | Delete unpinned items older than N days (`0` = off) |
 | `maxCaptureBytes`     | Int        | `10 MB` | Skip captures larger than this |
+| `rememberHistoryFilter`| Bool      | `false` | Reopen the panel on the last selected chip |
+| `lastHistoryFilter`   | String     | `""`    | Last selected chip (`recent`, `pinned`, `category:<id>`) |
+| `panelMaterial`       | String     | `translucent` | `glass`, `clearGlass` (macOS 26+), or `translucent` |
+| `panelOpacity`        | Double     | `0`     | Window-background tint over the material (0–1) |
 | `captureImages`       | Bool       | `true`  | Master toggle for image capture |
 | `captureFiles`        | Bool       | `true`  | Master toggle for file capture |
 | (hotkey)              | —          | `⌘⇧V`   | Managed by KeyboardShortcuts |

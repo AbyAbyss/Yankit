@@ -16,21 +16,26 @@ final class ClipboardRepository {
         self.blobStore = blobStore
     }
 
-    /// Inserts a new item, then evicts the oldest unpinned items so that no
-    /// more than `maxItems` unpinned items remain. Pinned items are exempt
-    /// and do not count toward the cap.
+    /// Items that are neither pinned nor in a category — the auto-managed
+    /// part of the history that eviction and auto-expiry may delete.
+    private static let isEvictable =
+        Column("pinned") == false && Column("category_id") == nil
+
+    /// Inserts a new item, then evicts the oldest evictable items so that no
+    /// more than `maxItems` evictable items remain. Pinned and categorized
+    /// items are exempt and do not count toward the cap.
     func insert(_ item: ClipboardItem, maxItems: Int) throws {
         try queue.write { db in
             try item.insert(db)
-            try self.evictUnpinned(db, maxItems: maxItems)
+            try self.evictExcess(db, maxItems: maxItems)
         }
     }
 
-    /// Evicts the oldest unpinned items so that at most `maxItems` remain.
+    /// Evicts the oldest evictable items so that at most `maxItems` remain.
     /// Used when the user lowers the cap in Settings (ARCHITECTURE.md §7).
     func enforceLimit(maxItems: Int) throws {
         try queue.write { db in
-            try self.evictUnpinned(db, maxItems: maxItems)
+            try self.evictExcess(db, maxItems: maxItems)
         }
     }
 
@@ -53,11 +58,11 @@ final class ClipboardRepository {
         }
     }
 
-    /// All items, pinned first, then newest first within each group.
+    /// All items, newest first.
     func allItems() throws -> [ClipboardItem] {
         try queue.read { db in
             try ClipboardItem
-                .order(Column("pinned").desc, Column("copied_at").desc)
+                .order(Column("copied_at").desc)
                 .fetchAll(db)
         }
     }
@@ -71,6 +76,27 @@ final class ClipboardRepository {
             guard var item = try ClipboardItem.fetchOne(db, key: id)
             else { return }
             item.pinned = pinned
+            try item.update(db)
+        }
+    }
+
+    /// Moves an item into a category, or back to normal history when
+    /// `categoryID` is nil.
+    func setCategory(_ categoryID: String?, id: String) throws {
+        try queue.write { db in
+            guard var item = try ClipboardItem.fetchOne(db, key: id)
+            else { return }
+            item.categoryID = categoryID
+            try item.update(db)
+        }
+    }
+
+    /// Sets an item's user label; nil removes it.
+    func setLabel(_ label: String?, id: String) throws {
+        try queue.write { db in
+            guard var item = try ClipboardItem.fetchOne(db, key: id)
+            else { return }
+            item.label = label
             try item.update(db)
         }
     }
@@ -92,7 +118,7 @@ final class ClipboardRepository {
         try blobStore.deleteAll()
     }
 
-    /// Deletes unpinned items older than `days`, returning how many were
+    /// Deletes evictable items older than `days`, returning how many were
     /// removed. A non-positive `days` is a no-op. See ARCHITECTURE.md §7.
     @discardableResult
     func expireItems(olderThanDays days: Int) throws -> Int {
@@ -102,7 +128,7 @@ final class ClipboardRepository {
         ) ?? Date()
         return try queue.write { db in
             let stale = try ClipboardItem
-                .filter(Column("pinned") == false)
+                .filter(Self.isEvictable)
                 .filter(Column("copied_at") < cutoff)
                 .fetchAll(db)
             for item in stale {
@@ -132,19 +158,43 @@ final class ClipboardRepository {
         try blobStore.deleteUnreferenced(keeping: referenced)
     }
 
+    // MARK: - Categories
+
+    /// All categories, oldest first — the order their chips appear in.
+    func allCategories() throws -> [ClipboardCategory] {
+        try queue.read { db in
+            try ClipboardCategory.order(Column("created_at")).fetchAll(db)
+        }
+    }
+
+    /// Inserts a new category or updates an existing one.
+    func saveCategory(_ category: ClipboardCategory) throws {
+        try queue.write { db in
+            try category.save(db)
+        }
+    }
+
+    /// Deletes a category. Its items stay in the history: the foreign key
+    /// clears their `category_id`, so they become evictable again.
+    func deleteCategory(id: String) throws {
+        try queue.write { db in
+            _ = try ClipboardCategory.deleteOne(db, key: id)
+        }
+    }
+
     // MARK: - Private
 
-    /// Drops the oldest unpinned rows (and their blobs) until at most
-    /// `maxItems` unpinned rows remain.
-    private func evictUnpinned(_ db: Database, maxItems: Int) throws {
-        let unpinnedCount = try ClipboardItem
-            .filter(Column("pinned") == false)
+    /// Drops the oldest evictable rows (and their blobs) until at most
+    /// `maxItems` evictable rows remain.
+    private func evictExcess(_ db: Database, maxItems: Int) throws {
+        let evictableCount = try ClipboardItem
+            .filter(Self.isEvictable)
             .fetchCount(db)
-        let surplus = unpinnedCount - maxItems
+        let surplus = evictableCount - maxItems
         guard surplus > 0 else { return }
 
         let victims = try ClipboardItem
-            .filter(Column("pinned") == false)
+            .filter(Self.isEvictable)
             .order(Column("copied_at").asc)
             .limit(surplus)
             .fetchAll(db)
