@@ -956,14 +956,34 @@ private struct AboutTab: View {
             Text("MIT Licensed")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
+            HStack(spacing: 16) {
+                Link(destination: Self.websiteURL) {
+                    Label("Website", systemImage: "globe")
+                }
+                Link(destination: Self.sourceURL) {
+                    Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                }
+            }
+            .font(.system(size: 12, weight: .semibold))
+            .padding(.top, 10)
+            HStack(spacing: 4) {
+                Text("Made by")
+                Link("Aby Saji", destination: Self.authorURL)
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
     }
 
+    private static let websiteURL = URL(string: "https://abyabyss.github.io/Yankit")!
+    private static let sourceURL = URL(string: "https://github.com/AbyAbyss/Yankit")!
+    private static let authorURL = URL(string: "https://abyabyss.github.io/")!
+
     private var appVersion: String {
         Bundle.main.object(
             forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "0.1.0"
+        ) as? String ?? "—"
     }
 }
