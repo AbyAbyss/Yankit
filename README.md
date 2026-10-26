@@ -1,95 +1,183 @@
 <p align="center">
-  <img src="docs/banner.svg" alt="Yankit" width="1200">
+  <img src="docs/images/hero.jpg" alt="Yankit — every copy, kept, and drawn for what it is" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-macOS%2014%2B-1b1b1b?logo=apple&logoColor=white" alt="Platform: macOS 14+">
-  <img src="https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white" alt="Swift 5.9">
-  <img src="https://img.shields.io/badge/SwiftUI-AppKit-2396F3?logo=swift&logoColor=white" alt="SwiftUI + AppKit">
-  <img src="https://img.shields.io/badge/license-MIT-3da639" alt="License: MIT">
-  <img src="https://img.shields.io/badge/status-feature%20complete-22c55e" alt="Status: feature complete">
+  <a href="https://github.com/AbyAbyss/Yankit/releases/latest"><img src="https://img.shields.io/github/v/release/AbyAbyss/Yankit?style=for-the-badge&color=D4FF4F&labelColor=16161d&label=release" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-F2F2F7?style=for-the-badge&logo=apple&logoColor=white&labelColor=16161d" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Swift-SwiftUI%20%2B%20AppKit-F05138?style=for-the-badge&logo=swift&logoColor=white&labelColor=16161d" alt="Swift, SwiftUI + AppKit">
+  <img src="https://img.shields.io/badge/license-MIT-7AB0FF?style=for-the-badge&labelColor=16161d" alt="License: MIT">
+</p>
+
+<h3 align="center">You copied it two hours ago. <b>Yankit kept it.</b></h3>
+
+<p align="center">
+  A free, open-source clipboard manager that lives in your Mac's menu bar.<br>
+  Press <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>V</kbd> anywhere: search, pick, paste.
 </p>
 
 <p align="center">
-  A fast, free, open-source clipboard manager for macOS —<br>
-  it remembers the <b>text</b>, <b>images</b>, and <b>files</b> you copy, and pastes any of them back with <b>⌘⇧V</b>.
-</p>
-
-<p align="center">
+  <a href="https://github.com/AbyAbyss/Yankit/releases/latest"><b>⬇&nbsp; Download for macOS</b></a> &nbsp;·&nbsp;
+  <a href="https://abyabyss.github.io/Yankit"><b>Website</b></a> &nbsp;·&nbsp;
   <a href="#features">Features</a> &nbsp;·&nbsp;
-  <a href="#a-look-inside">A look inside</a> &nbsp;·&nbsp;
-  <a href="#how-it-works">How it works</a> &nbsp;·&nbsp;
-  <a href="#download">Download</a> &nbsp;·&nbsp;
-  <a href="#build-from-source">Build</a> &nbsp;·&nbsp;
   <a href="#keyboard-shortcuts">Shortcuts</a> &nbsp;·&nbsp;
-  <a href="#roadmap">Roadmap</a>
+  <a href="#build-from-source">Build</a>
+</p>
+
+<br>
+
+<p align="center">
+  <a href="https://abyabyss.github.io/Yankit#video">
+    <img src="docs/images/video.jpg" alt="Watch Yankit 1.3 in 46 seconds" width="88%">
+  </a>
 </p>
 
 ---
 
-## Features
+## Every copy, drawn for what it is
 
-- **Captures everything you copy** — plain text, images, and files, automatically.
-- **Searchable history** — press ⌘⇧V, start typing, and the list filters instantly.
-- **Pin what matters** — pinned items are exempt from the rolling limit and never auto-deleted.
-- **Paste straight back** — pick an item and Yankit pastes it into the app you were just in.
-- **Prune on the fly** — delete any single item with the row's × button or ⌘⌫.
-- **Light on memory** — history lives in SQLite with image blobs on disk, not in RAM (~40 MB idle).
-- **Privacy-first** — skips password-manager content, dims while paused, and keeps its data out of Spotlight and Time Machine.
-- **Pause when you need to** — one click silences capture for an hour, until tomorrow, or until you resume.
-- **Per-app exclusion** — tell Yankit to ignore copies made in specific apps.
-- **Yours to tune** — a configurable cap (default 30) trims the oldest items, with optional auto-expiry by age.
+Links, colors, code, terminal commands, images, PDFs, notes — each copy gets its
+own tile, so you find it by sight before you've finished typing.
 
-## A look inside
+<table>
+  <tr>
+    <td width="46%" valign="middle">
+      <img src="docs/images/panel.png" alt="The Yankit history panel" width="100%">
+    </td>
+    <td width="54%" valign="middle">
+      <h3>🔎&nbsp; Search it. Tab through it.</h3>
+      Start typing to filter instantly. <kbd>⇥</kbd> flips between <b>Recent</b>, <b>Pinned</b>, and your own colored categories — each chip shows its count.
+      <h3>📌&nbsp; Keep what matters</h3>
+      Pin with <kbd>⌘P</kbd>, label with <kbd>⌘L</kbd>, and move items into categories by drag and drop or <kbd>⌘M</kbd>. Pinned and categorized items are never trimmed.
+      <h3>⚡&nbsp; Never touch the mouse</h3>
+      <kbd>⌘1</kbd>–<kbd>⌘9</kbd> paste the first nine items straight into the app you were just in.
+    </td>
+  </tr>
+</table>
 
-Press `⌘⇧V` anywhere and the history panel drops in, centered and ready — search,
-arrow keys, Return to paste.
+## Secrets stay secret
+
+Drop an API key onto a **sensitive** category and it's redacted everywhere — in
+the list, in search, in the preview. Only the first few characters show (you
+choose how many), and a label like *OpenAI key* tells you what it is. Hold
+<kbd>⌥</kbd> to peek; let go and it's hidden again.
 
 <p align="center">
-  <img src="docs/panel.svg" alt="The Yankit history panel" width="660">
+  <img src="docs/images/peek.png" alt="Peeking at a redacted API key with ⌥" width="88%">
 </p>
+
+## New in 1.3 — Preview <sup><code>BETA</code></sup>
+
+Look first, paste second. Turn on **Settings → Appearance → Show preview pane**
+and the panel widens with a large preview of whatever you select: a link's site, a color
+with its shades, code in full, the whole image, a PDF's first page.
+
+<p align="center">
+  <img src="docs/images/preview.gif" alt="The preview pane in use" width="88%">
+</p>
+
+With the preview on, a click selects and a double-click (or <kbd>Return</kbd>)
+pastes. With it off — the default — a single click pastes, just like before.
+
+<table>
+  <tr>
+    <td width="58%" valign="middle">
+      <img src="docs/images/settings.png" alt="Settings → Appearance" width="100%">
+    </td>
+    <td width="42%" valign="middle">
+      <h3>🎨&nbsp; Your glass. Your color.</h3>
+      Four materials — <b>Liquid Glass</b> (macOS 26), <b>Frosted Glass</b>, <b>Translucent</b>, and <b>Solid</b> — with adjustable opacity.
+      <br><br>
+      Six accents: Lime, Blue, Purple, Orange, Pink, or your system color. Light, dark, or follow the system.
+      <br><br>
+      A live preview shows every change before you close Settings.
+    </td>
+  </tr>
+</table>
+
+## Features
+
+| | |
+| --- | --- |
+| 📋 **Captures everything** | Text, images, and files — automatically, as you copy. |
+| 🖼 **Rich tiles** | Links, colors, code, terminal commands, images, PDFs, files, and notes each look like themselves. |
+| 🗂 **Categories** | Create, rename, recolor, and reorder your own; one category per item, kept forever. |
+| 🔒 **Sensitive categories** | Redacted in the list, search, and preview; hold <kbd>⌥</kbd> to peek. |
+| 🏷 **Labels** | Name any item — labels show on redacted items and are searchable. |
+| 📌 **Pins** | Pinned items skip the rolling limit and auto-expiry. |
+| 👀 **Preview pane** <sup>beta</sup> | A large, per-kind preview of the selected item. |
+| ✨ **Liquid Glass** | Native glass on macOS 26, frosted or translucent everywhere else. |
+| 🎨 **Accents & themes** | Six accents, light/dark/system, four materials. |
+| ⌨️ **Keyboard-first** | Every action has a shortcut; <kbd>⌘⇧V</kbd> is rebindable. |
+| 🧹 **Self-tidying** | A configurable cap (default 30) trims the oldest items, with optional expiry by age. |
+| ⏸ **Pause** | Silence capture for an hour, until tomorrow, or until you resume. |
+| 🚫 **Per-app exclusion** | Ignore copies made in the apps you choose. |
+| 🪶 **Light on memory** | SQLite plus image files on disk, not in RAM (~40 MB idle). |
+| 🛡 **Private** | Skips password-manager content, stays out of Spotlight and Time Machine. No account, no sync, no telemetry — nothing leaves your Mac. |
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>V</kbd> | Open / close the history panel (rebindable) |
+| *type* | Filter the history live |
+| <kbd>↑</kbd> <kbd>↓</kbd> | Move the selection |
+| <kbd>Return</kbd> | Paste the selected item |
+| <kbd>⌘</kbd> <kbd>1</kbd>–<kbd>9</kbd> | Paste the Nth visible item |
+| <kbd>⇥</kbd> / <kbd>⇧</kbd> <kbd>⇥</kbd> | Next / previous tab |
+| <kbd>⌘</kbd> <kbd>P</kbd> | Pin or unpin |
+| <kbd>⌘</kbd> <kbd>L</kbd> | Label the selected item |
+| <kbd>⌘</kbd> <kbd>M</kbd> | Move to a category |
+| <kbd>⌘</kbd> <kbd>N</kbd> | New category |
+| <kbd>⌘</kbd> <kbd>K</kbd> | Focus search |
+| <kbd>⌘</kbd> <kbd>⌫</kbd> | Delete the selected item |
+| hold <kbd>⌥</kbd> | Peek at a sensitive item (preview pane) |
+| <kbd>Esc</kbd> | Dismiss the panel |
+
+## Download
+
+Grab the latest **`Yankit-<version>.dmg`** from
+[**Releases**](https://github.com/AbyAbyss/Yankit/releases/latest), open it, and
+drag **Yankit** into Applications. Requires macOS 14 (Sonoma) or later.
+
+<details>
+<summary><b>First launch: "macOS can't verify Yankit"</b></summary>
+
+<br>
+
+Yankit is a free side project and isn't notarized yet. Open **System Settings →
+Privacy & Security** and click **Open Anyway**, or run:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Yankit.app
+```
+
+For one-touch paste, grant Yankit **Accessibility** access when prompted (System
+Settings → Privacy & Security → Accessibility). Without it, Yankit still puts
+your pick on the clipboard for a manual <kbd>⌘V</kbd>.
+
+</details>
 
 ## How it works
 
 Yankit lives in the menu bar — no Dock icon, no window in your way. A lightweight
 monitor watches the system pasteboard and records each new copy into a local
-SQLite database, with image and file payloads stored as files on disk so the
-database stays small and fast. When you pick an item, it goes back on the
-pasteboard and Yankit pastes it into wherever you were.
+SQLite database, with image and file payloads stored on disk so the database
+stays small and fast. When you pick an item, it goes back on the pasteboard and
+Yankit pastes it into wherever you were.
 
 <p align="center">
   <img src="docs/architecture.svg" alt="Yankit data flow" width="980">
 </p>
 
 Two paths, one shared clipboard: the **capture** path records what you copy, the
-**recall** path puts it back. Nothing leaves your Mac — no account, no sync, no
-telemetry. The full design is in [ARCHITECTURE.md](ARCHITECTURE.md).
-
-## Download
-
-Grab the latest `Yankit-<version>.dmg` from the [**Releases**](https://github.com/AbyAbyss/Yankit/releases/latest) page, open it, and drag **Yankit** into Applications. Yankit needs macOS 14 (Sonoma) or later.
-
-## First launch
-
-macOS will say it can't verify Yankit (free side project, not notarized).
-
-Open **System Settings → Privacy & Security** and click **Open Anyway**, or run in Terminal:
-
-```sh
-xattr -dr com.apple.quarantine /Applications/Yankit.app
-```
-
-For one-touch paste, also grant Yankit **Accessibility** access when prompted (System Settings → Privacy & Security → Accessibility).
-
-## Requirements
-
-- macOS 14 (Sonoma) or later
-- Xcode 15 or later
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
+**recall** path puts it back. The full design is in
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Build from source
 
-The Xcode project is generated from `project.yml`, so it is not committed:
+Requires Xcode 15+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The
+Xcode project is generated from `project.yml`, so it isn't committed:
 
 ```sh
 brew install xcodegen
@@ -97,39 +185,24 @@ git clone https://github.com/AbyAbyss/Yankit.git
 cd Yankit && xcodegen generate && open Yankit.xcodeproj
 ```
 
-Press `⌘R` to run and `⌘U` to run the tests. A clipboard icon appears in the menu bar.
-
-For one-touch paste, grant Yankit **Accessibility** access when prompted
-(System Settings → Privacy & Security → Accessibility). Without it, Yankit still
-places your selection on the clipboard for a manual `⌘V`.
-
-## Keyboard shortcuts
-
-| Shortcut | Action |
-| --- | --- |
-| `⌘⇧V` | Open / close the history panel |
-| Type | Filter the history live |
-| `↑` `↓` | Move the selection |
-| `Return` | Paste the selected item |
-| `⌘⌫` | Delete the selected item from history |
-| `Esc` | Dismiss the panel |
-
-The `⌘⇧V` shortcut is rebindable in Settings → General.
+Press <kbd>⌘R</kbd> to run and <kbd>⌘U</kbd> to run the tests. A clipboard icon
+appears in the menu bar.
 
 ## Releasing
 
-Releases are tag-driven — pushing a version tag builds, tests, packages a DMG,
-and publishes a GitHub Release automatically:
+The version lives in one place — `MARKETING_VERSION` in `project.yml` — and
+GitHub Actions builds, tests, packages a DMG, and publishes a release for exactly
+that version. Trigger it with the **Run workflow** button on the Release action,
+or by pushing the matching tag:
 
 ```sh
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.3.1
+git push origin v1.3.1
 ```
 
-Builds are currently unsigned, so the first launch needs a one-time approval in
-System Settings → Privacy & Security. See **[docs/RELEASING.md](docs/RELEASING.md)**
-for the full guide — local builds, code signing, notarization, and publishing
-to Homebrew.
+Versions follow semver (`1.3.1` patch, `1.4.0` minor, `2.0.0` major). See
+**[docs/RELEASING.md](docs/RELEASING.md)** for the full guide — bump rules, local
+builds, code signing, notarization, and Homebrew.
 
 ## Roadmap
 
@@ -140,3 +213,7 @@ to Homebrew.
 ## License
 
 MIT — see [LICENSE](LICENSE). Contributions welcome.
+
+<p align="center">
+  <sub>Made by <a href="https://abyabyss.github.io/">Aby Saji</a> · <a href="https://abyabyss.github.io/Yankit">abyabyss.github.io/Yankit</a></sub>
+</p>
