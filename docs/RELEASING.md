@@ -41,10 +41,15 @@ which:
 1. Checks out the commit and reads the version from `project.yml`.
 2. Generates the Xcode project with XcodeGen.
 3. Runs the unit tests — a failure here stops the release.
-4. Builds `Yankit.app` in Release configuration with that version.
-5. Packages it into `Yankit-1.4.0.dmg` with a drag-to-Applications layout.
-6. Creates the GitHub Release (and the tag, for a button run), attaches the
-   DMG, and auto-generates notes from the commits since the previous tag.
+4. Builds `Yankit.app` in Release configuration with that version, signed
+   with your Developer ID if the signing secrets are set, ad-hoc otherwise.
+5. Packages it into `Yankit-1.4.0.dmg` with a drag-to-Applications layout,
+   then notarizes and staples it (signed builds only).
+6. Signs the DMG for Sparkle and writes `appcast.xml` (only if the
+   `SPARKLE_PRIVATE_KEY` secret is set).
+7. Creates the GitHub Release (and the tag, for a button run), attaches the
+   DMG and the appcast, and auto-generates notes from the commits since the
+   previous tag.
 
 Watch it under the repository's **Actions** tab; when it finishes, the release
 is live on the **Releases** page.
@@ -93,14 +98,9 @@ export as a `.p12` with a password, then base64-encode it for a GitHub secret.
 
 ### 3. Sign the build
 
-Add the hardened runtime (required for notarization) to `project.yml`, under the
-`Yankit` target's `settings.base`:
-
-```yaml
-        ENABLE_HARDENED_RUNTIME: YES
-```
-
-Then build with your Developer ID identity instead of the ad-hoc `-`:
+`project.yml` already turns on the hardened runtime (required for
+notarization) for Release builds. Build with your Developer ID identity
+instead of the ad-hoc `-`:
 
 ```sh
 xcodebuild -project Yankit.xcodeproj -scheme Yankit -configuration Release \
@@ -110,11 +110,15 @@ xcodebuild -project Yankit.xcodeproj -scheme Yankit -configuration Release \
   build
 ```
 
+Sparkle's helpers ship signed by the Sparkle team, so re-sign them with your
+identity before notarizing. The release workflow does this in its
+**Re-sign Sparkle and the app** step; copy those commands for a local build.
+
 ### 4. Notarize
 
 Store your notary credentials once. Use an
 [app-specific password](https://support.apple.com/102654) created at
-appleid.apple.com — not your main Apple ID password:
+appleid.apple.com, not your main Apple ID password:
 
 ```sh
 xcrun notarytool store-credentials yankit-notary \
@@ -132,42 +136,71 @@ xcrun stapler staple Yankit-1.4.0.dmg
 
 A notarized, stapled DMG opens with no Gatekeeper warning.
 
-### 5. Add signing to CI
+### 5. Turn on signing in CI
 
-When you are ready, add these repository secrets under Settings → Secrets and
-variables → Actions:
+The release workflow already has the signing and notarization steps. They
+switch on by themselves once these repository secrets exist (Settings →
+Secrets and variables → Actions):
 
 | Secret | What it is |
 | --- | --- |
-| `MACOS_CERTIFICATE` | base64 of the exported `.p12` |
-| `MACOS_CERTIFICATE_PWD` | the `.p12` export password |
+| `DEVELOPER_ID_CERT_P12` | base64 of the exported `.p12` (`base64 -i cert.p12 \| pbcopy`) |
+| `DEVELOPER_ID_CERT_PASSWORD` | the `.p12` export password |
 | `APPLE_ID` | your Apple ID email |
 | `APPLE_TEAM_ID` | your 10-character Team ID |
 | `APPLE_APP_PASSWORD` | the app-specific password |
 
-Then, in `release.yml`, import the certificate before the build, build with the
-Developer ID identity, and add a notarize step after the DMG is created:
+Without `DEVELOPER_ID_CERT_P12` the workflow builds unsigned, as before.
 
-```yaml
-      - name: Import signing certificate
-        uses: apple-actions/import-codesign-certs@v3
-        with:
-          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
-          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+## Auto-updates (Sparkle)
 
-      # ...in the build step, replace the ad-hoc identity with:
-      #   DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
-      #   CODE_SIGN_IDENTITY="Developer ID Application"
+Yankit updates itself with [Sparkle](https://sparkle-project.org). Each
+release attaches an `appcast.xml`, and the app reads the copy on the latest
+release:
 
-      - name: Notarize and staple
-        run: |
-          xcrun notarytool submit "Yankit-${VERSION}.dmg" \
-            --apple-id "${{ secrets.APPLE_ID }}" \
-            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-            --password "${{ secrets.APPLE_APP_PASSWORD }}" \
-            --wait
-          xcrun stapler staple "Yankit-${VERSION}.dmg"
 ```
+https://github.com/AbyAbyss/Yankit/releases/latest/download/appcast.xml
+```
+
+Sparkle only installs an update whose EdDSA signature matches the public key
+built into the running app. Set the keys up once:
+
+1. Download the Sparkle release that matches the package version from
+   [its releases page](https://github.com/sparkle-project/Sparkle/releases)
+   and run `./bin/generate_keys`. It stores the private key in your login
+   Keychain and prints the public key.
+2. Paste the public key into `SPARKLE_PUBLIC_KEY` in `project.yml`.
+3. Export the private key with `./bin/generate_keys -x sparkle_private_key`,
+   save the file's contents as the `SPARKLE_PRIVATE_KEY` repository secret,
+   then delete the file. Keep the Keychain copy: **if you lose the private
+   key, existing installs can never update again.**
+
+While `SPARKLE_PUBLIC_KEY` is empty the app has no updater at all (no
+"Check for Updates…" item), so forks and local builds don't nag anyone.
+
+The first release with a key is the first one that can update itself. Users
+on 1.3.x and earlier install it by hand once; from then on it updates on its
+own. Sparkle asks on the second launch whether to check automatically.
+
+## Selling the supporter download
+
+Yankit stays MIT and free to build. The supporter download is the same
+signed, notarized DMG, sold pay-what-you-want so people can pay for the
+convenience and to support the project:
+
+1. Make a product on [Gumroad](https://gumroad.com) or
+   [Lemon Squeezy](https://www.lemonsqueezy.com) called "Yankit (supporter
+   download)": pay what you want, suggested $5. Attach the release DMG, or
+   link to the latest release so the file never goes stale.
+2. Add the product link, plus Buy Me a Coffee and GitHub Sponsors if you
+   use them, to the `#support` section of the website. The app's
+   **Support Yankit…** menu item and About link open that section, so the
+   links can change without a new build.
+3. If you add GitHub Sponsors, list it in `.github/FUNDING.yml` to get the
+   **Sponsor** button on the repository.
+
+Buyers get updates through Sparkle like everyone else, so there is no
+license key to manage.
 
 ## Publishing to Homebrew
 
@@ -185,10 +218,10 @@ cask "yankit" do
   version "1.4.0"
   sha256 "PASTE_THE_DMG_SHA256_HERE"
 
-  url "https://github.com/aby/yankit/releases/download/v#{version}/Yankit-#{version}.dmg"
+  url "https://github.com/AbyAbyss/Yankit/releases/download/v#{version}/Yankit-#{version}.dmg"
   name "Yankit"
   desc "Free, open-source clipboard manager for macOS"
-  homepage "https://github.com/aby/yankit"
+  homepage "https://github.com/AbyAbyss/Yankit"
 
   livecheck do
     url :url
@@ -205,7 +238,7 @@ Get the checksum after a release with `shasum -a 256 Yankit-1.4.0.dmg`. Users
 then install with:
 
 ```sh
-brew install --cask aby/yankit/yankit
+brew install --cask AbyAbyss/yankit/yankit
 ```
 
 Each release, bump `version` and `sha256` in the cask and commit. (This can be
@@ -228,5 +261,6 @@ file there and follow its contribution checklist.
 - [ ] Set `MARKETING_VERSION` in `project.yml` and merge to `main`.
 - [ ] Click **Run workflow**, or `git tag vX.Y.Z && git push origin vX.Y.Z`.
 - [ ] Watch the **Actions** run finish green.
-- [ ] Check the **Releases** page — DMG attached, notes look right.
+- [ ] Check the **Releases** page: DMG and `appcast.xml` attached, notes look right.
+- [ ] From an older install, use **Check for Updates…** and confirm it updates.
 - [ ] If you maintain a Homebrew tap, bump `version` + `sha256` in the cask.

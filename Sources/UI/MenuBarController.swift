@@ -12,6 +12,13 @@ final class MenuBarController: NSObject {
     /// Supplies the pause-related menu items, rebuilt each time the menu
     /// opens so they reflect the current pause state.
     var pauseMenuItemsProvider: (() -> [NSMenuItem])?
+    /// Invoked when the user asks to check for a new version.
+    var onCheckForUpdates: (() -> Void)?
+    /// Whether to show "Check for Updates…"; false in builds without an
+    /// update key (see UpdateController).
+    var canCheckForUpdates = false
+    /// Invoked when the user picks "Support Yankit…".
+    var onSupport: (() -> Void)?
 
     private let statusItem: NSStatusItem
 
@@ -65,6 +72,24 @@ final class MenuBarController: NSObject {
         settings.target = self
         menu.addItem(settings)
 
+        if canCheckForUpdates {
+            let updates = NSMenuItem(
+                title: "Check for Updates…",
+                action: #selector(checkForUpdates),
+                keyEquivalent: ""
+            )
+            updates.target = self
+            menu.addItem(updates)
+        }
+
+        let support = NSMenuItem(
+            title: "Support Yankit…",
+            action: #selector(openSupport),
+            keyEquivalent: ""
+        )
+        support.target = self
+        menu.addItem(support)
+
         menu.addItem(.separator())
         menu.addItem(
             withTitle: "Quit Yankit",
@@ -91,6 +116,14 @@ final class MenuBarController: NSObject {
 
     @objc private func openSettings() {
         onOpenSettings?()
+    }
+
+    @objc private func checkForUpdates() {
+        onCheckForUpdates?()
+    }
+
+    @objc private func openSupport() {
+        onSupport?()
     }
 
     private func showMenu() {

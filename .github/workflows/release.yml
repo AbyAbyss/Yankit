@@ -68,20 +68,82 @@ jobs:
             -destination 'platform=macOS' \
             -derivedDataPath build
 
-      - name: Build Release (unsigned)
+      # Signing is optional: with the Apple secrets set (docs/RELEASING.md)
+      # the build is Developer ID signed and notarized; without them it is
+      # ad-hoc signed as before and users approve it on first launch.
+      - name: Import signing certificate
+        id: signing
+        env:
+          CERT_P12: ${{ secrets.DEVELOPER_ID_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
         run: |
+          if [ -z "$CERT_P12" ]; then
+            echo "No DEVELOPER_ID_CERT_P12 secret: building unsigned."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(uuidgen)
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" \
+            $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build Release
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          if [ "$SIGNED" = "true" ]; then
+            SIGNING=(CODE_SIGN_STYLE=Manual
+                     DEVELOPMENT_TEAM="$TEAM_ID"
+                     CODE_SIGN_IDENTITY="Developer ID Application"
+                     OTHER_CODE_SIGN_FLAGS=--timestamp)
+          else
+            SIGNING=(CODE_SIGN_IDENTITY="-"
+                     CODE_SIGNING_REQUIRED=NO
+                     CODE_SIGNING_ALLOWED=YES)
+          fi
           xcodebuild \
             -project Yankit.xcodeproj \
             -scheme Yankit \
             -configuration Release \
             -derivedDataPath build \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
-            CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
+            "${SIGNING[@]}" \
             build
 
+      # Notarization needs every binary signed with Developer ID, the
+      # hardened runtime and a timestamp, including Sparkle's helpers, which
+      # ship pre-signed by their own team. Re-sign inside out, then the app.
+      - name: Re-sign Sparkle and the app
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          APP="build/Build/Products/Release/Yankit.app"
+          SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+          IDENTITY="Developer ID Application"
+          sign() { codesign -f -s "$IDENTITY" -o runtime --timestamp "$@"; }
+          sign "$SPARKLE/XPCServices/Installer.xpc"
+          sign --preserve-metadata=entitlements "$SPARKLE/XPCServices/Downloader.xpc"
+          sign "$SPARKLE/Autoupdate"
+          sign "$SPARKLE/Updater.app"
+          sign "$APP/Contents/Frameworks/Sparkle.framework"
+          sign --preserve-metadata=entitlements "$APP"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
       - name: Package DMG
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
           APP="build/Build/Products/Release/Yankit.app"
           STAGING="dmg-staging"
@@ -93,6 +155,66 @@ jobs:
             -srcfolder "$STAGING" \
             -ov -format UDZO \
             "Yankit-${VERSION}.dmg"
+          if [ "$SIGNED" = "true" ]; then
+            codesign -s "Developer ID Application" --timestamp "Yankit-${VERSION}.dmg"
+          fi
+
+      - name: Notarize and staple
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+        run: |
+          xcrun notarytool submit "Yankit-${VERSION}.dmg" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$TEAM_ID" \
+            --password "$APP_PASSWORD" \
+            --wait
+          xcrun stapler staple "Yankit-${VERSION}.dmg"
+
+      # Sparkle installs an update only if its EdDSA signature matches the
+      # public key in the running app. Sign the final (stapled) DMG and
+      # publish an appcast next to it; the app reads the copy attached to
+      # the latest release (SUFeedURL in Info.plist).
+      - name: Sign update and write appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          SPARKLE_TOOLS_VERSION: "2.6.4"
+        run: |
+          if [ -z "$SPARKLE_PRIVATE_KEY" ]; then
+            echo "No SPARKLE_PRIVATE_KEY secret: skipping the appcast."
+            exit 0
+          fi
+          curl -sSL -o sparkle.tar.xz \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_TOOLS_VERSION}/Sparkle-${SPARKLE_TOOLS_VERSION}.tar.xz"
+          mkdir sparkle-tools && tar -xf sparkle.tar.xz -C sparkle-tools
+          KEY_FILE="$RUNNER_TEMP/sparkle_key"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$KEY_FILE"
+          ATTRS=$(sparkle-tools/bin/sign_update --ed-key-file "$KEY_FILE" "Yankit-${VERSION}.dmg")
+          rm "$KEY_FILE"
+          REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+          cat > appcast.xml <<XML
+          <?xml version="1.0" encoding="utf-8"?>
+          <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+            <channel>
+              <title>Yankit</title>
+              <link>${REPO_URL}</link>
+              <item>
+                <title>Yankit ${VERSION}</title>
+                <pubDate>$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")</pubDate>
+                <sparkle:version>${{ github.run_number }}</sparkle:version>
+                <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
+                <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+                <sparkle:fullReleaseNotesLink>${REPO_URL}/releases/tag/${TAG}</sparkle:fullReleaseNotesLink>
+                <enclosure url="${REPO_URL}/releases/download/${TAG}/Yankit-${VERSION}.dmg"
+                           type="application/octet-stream"
+                           ${ATTRS} />
+              </item>
+            </channel>
+          </rss>
+          XML
+          cat appcast.xml
 
       # For a button run the tag doesn't exist yet; --target creates it on
       # the commit that was built.
@@ -100,8 +222,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          ASSETS=("Yankit-${VERSION}.dmg")
+          [ -f appcast.xml ] && ASSETS+=(appcast.xml)
           gh release create "$TAG" \
-            "Yankit-${VERSION}.dmg" \
+            "${ASSETS[@]}" \
             --target "$GITHUB_SHA" \
             --title "Yankit $VERSION" \
             --generate-notes
+
+      - name: Remove signing keychain
+        if: always() && steps.signing.outputs.signed == 'true'
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db"

@@ -1027,9 +1027,19 @@ private struct AboutTab: View {
                 Link(destination: Self.sourceURL) {
                     Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                 }
+                Link(destination: SupportLinks.support) {
+                    Label("Support Yankit", systemImage: "heart")
+                }
             }
             .font(.system(size: 12, weight: .semibold))
             .padding(.top, 10)
+            if UpdateController.shared.isAvailable {
+                Button("Check for Updates…") {
+                    UpdateController.shared.checkForUpdates()
+                }
+                .controlSize(.small)
+                .padding(.top, 2)
+            }
             HStack(spacing: 4) {
                 Text("Made by")
                 Link("Aby Saji", destination: Self.authorURL)

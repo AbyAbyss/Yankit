@@ -79,6 +79,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menuBar.onOpenSettings = { [weak settingsController] in
                 settingsController?.show()
             }
+            menuBar.canCheckForUpdates = UpdateController.shared.isAvailable
+            menuBar.onCheckForUpdates = {
+                UpdateController.shared.checkForUpdates()
+            }
+            menuBar.onSupport = {
+                NSWorkspace.shared.open(SupportLinks.support)
+            }
 
             let pauseController = PauseController(preferences: preferences)
             pauseController.onPauseStateChanged = { [weak menuBar] paused in
@@ -104,6 +111,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.pauseController = pauseController
             self.hotkeyManager = hotkeyManager
             self.maintenanceService = maintenance
+
+            UpdateController.shared.start()
         } catch {
             NSLog("Yankit: failed to start: \(error)")
         }

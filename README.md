@@ -145,7 +145,7 @@ drag **Yankit** into Applications. Requires macOS 14 (Sonoma) or later.
 
 <br>
 
-Yankit is a free side project and isn't notarized yet. Open **System Settings →
+Builds that aren't notarized need a one-time approval. Open **System Settings →
 Privacy & Security** and click **Open Anyway**, or run:
 
 ```sh
@@ -202,11 +202,25 @@ git push origin v1.3.1
 
 Versions follow semver (`1.3.1` patch, `1.4.0` minor, `2.0.0` major). See
 **[docs/RELEASING.md](docs/RELEASING.md)** for the full guide — bump rules, local
-builds, code signing, notarization, and Homebrew.
+builds, code signing, notarization, auto-updates, the supporter download, and
+Homebrew.
+
+## Updates
+
+Yankit checks for new versions with [Sparkle](https://sparkle-project.org).
+Use **Check for Updates…** in the menu-bar menu or in Settings → About. Every
+update is verified against a signing key built into the app.
+
+## Support Yankit
+
+Yankit is free and stays MIT licensed: build it yourself, or grab the DMG from
+Releases. If it saves you time, you can buy the **supporter download** (the
+same signed build, pay what you want) or leave a tip. Both are on the
+[support page](https://abyabyss.github.io/Yankit#support), and **Support
+Yankit…** in the app opens it too.
 
 ## Roadmap
 
-- Code signing and notarization for a friction-free install
 - A Homebrew cask (`brew install --cask yankit`)
 - Drag items out of the history panel
 
