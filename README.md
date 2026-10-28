@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/macOS-14%2B-F2F2F7?style=for-the-badge&logo=apple&logoColor=white&labelColor=16161d" alt="macOS 14+">
   <img src="https://img.shields.io/badge/Swift-SwiftUI%20%2B%20AppKit-F05138?style=for-the-badge&logo=swift&logoColor=white&labelColor=16161d" alt="Swift, SwiftUI + AppKit">
   <img src="https://img.shields.io/badge/license-MIT-7AB0FF?style=for-the-badge&labelColor=16161d" alt="License: MIT">
+  <a href="https://buymeacoffee.com/abyabyss"><img src="https://img.shields.io/badge/buy%20me%20a-coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black&labelColor=16161d" alt="Buy me a coffee"></a>
 </p>
 
 <h3 align="center">You copied it two hours ago. <b>Yankit kept it.</b></h3>
@@ -21,7 +22,8 @@
   <a href="https://abyabyss.github.io/Yankit"><b>Website</b></a> &nbsp;·&nbsp;
   <a href="#features">Features</a> &nbsp;·&nbsp;
   <a href="#keyboard-shortcuts">Shortcuts</a> &nbsp;·&nbsp;
-  <a href="#build-from-source">Build</a>
+  <a href="#build-from-source">Build</a> &nbsp;·&nbsp;
+  <a href="#support-yankit">Support</a>
 </p>
 
 <br>
@@ -213,11 +215,13 @@ update is verified against a signing key built into the app.
 
 ## Support Yankit
 
-Yankit is free and stays MIT licensed: build it yourself, or grab the DMG from
-Releases. If it saves you time, you can buy the **supporter download** (the
-same signed build, pay what you want) or leave a tip. Both are on the
-[support page](https://abyabyss.github.io/Yankit#support), and **Support
-Yankit…** in the app opens it too.
+Yankit is free and stays MIT licensed: grab the DMG from Releases or build it
+yourself. No account, no trial, no paywall.
+
+If it saves you time, you can
+[buy me a coffee](https://buymeacoffee.com/abyabyss). Starring the repo,
+reporting bugs and telling a friend help just as much. **Support Yankit…** in
+the menu-bar menu opens the [support page](https://abyabyss.github.io/Yankit#support).
 
 ## Roadmap
 
