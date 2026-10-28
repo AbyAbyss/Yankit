@@ -51,6 +51,13 @@ jobs:
               exit 1
             fi
           fi
+          # Without the update key the release would ship with no updater,
+          # and everyone on it would have to update by hand again.
+          SPARKLE_KEY=$(sed -n 's/^ *SPARKLE_PUBLIC_KEY: *"\(.*\)"/\1/p' project.yml)
+          if [ -z "$SPARKLE_KEY" ]; then
+            echo "::error::SPARKLE_PUBLIC_KEY in project.yml is empty. Set it up first (docs/RELEASING.md, Auto-updates)."
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "TAG=$TAG" >> "$GITHUB_ENV"
 

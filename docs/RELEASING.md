@@ -175,7 +175,9 @@ built into the running app. Set the keys up once:
    then delete the file. Keep the Keychain copy: **if you lose the private
    key, existing installs can never update again.**
 
-While `SPARKLE_PUBLIC_KEY` is empty the app has no updater at all (no
+The release workflow refuses to run while `SPARKLE_PUBLIC_KEY` is empty, so a
+release can't ship without an updater by accident. Local builds without the
+key have no updater at all (no
 "Check for Updates…" item), so forks and local builds don't nag anyone.
 
 The first release with a key is the first one that can update itself. Users
