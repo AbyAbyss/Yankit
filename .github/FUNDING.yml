@@ -1,3 +1,4 @@
-# Shows the Sponsor button on the repository. Add `github: <username>` or
-# `buy_me_a_coffee: <username>` here once those accounts exist.
+# Shows the Sponsor button on the repository. Add `github: <username>` here
+# once GitHub Sponsors is set up.
+buy_me_a_coffee: abyabyss
 custom: ["https://abyabyss.github.io/Yankit#support"]
