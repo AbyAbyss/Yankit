@@ -218,10 +218,15 @@ update is verified against a signing key built into the app.
 Yankit is free and stays MIT licensed: grab the DMG from Releases or build it
 yourself. No account, no trial, no paywall.
 
-If it saves you time, you can
-[buy me a coffee](https://buymeacoffee.com/abyabyss). Starring the repo,
-reporting bugs and telling a friend help just as much. **Support Yankit…** in
-the menu-bar menu opens the [support page](https://abyabyss.github.io/Yankit#support).
+If it saves you time, a coffee keeps the updates coming:
+
+<p align="center">
+  <a href="https://buymeacoffee.com/abyabyss"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy me a coffee" height="50"></a>
+</p>
+
+Starring the repo, reporting bugs and telling a friend help just as much.
+**Support Yankit…** in the menu-bar menu opens the
+[support page](https://abyabyss.github.io/Yankit#support).
 
 ## Roadmap
 
