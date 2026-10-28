@@ -110,9 +110,14 @@ jobs:
           TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           if [ "$SIGNED" = "true" ]; then
+            # The hardened runtime (required for notarization) only goes on
+            # signed builds: it enforces library validation, so an ad-hoc
+            # build with it can't load the embedded Sparkle.framework and
+            # quits at launch.
             SIGNING=(CODE_SIGN_STYLE=Manual
                      DEVELOPMENT_TEAM="$TEAM_ID"
                      CODE_SIGN_IDENTITY="Developer ID Application"
+                     ENABLE_HARDENED_RUNTIME=YES
                      OTHER_CODE_SIGN_FLAGS=--timestamp)
           else
             SIGNING=(CODE_SIGN_IDENTITY="-"

@@ -98,17 +98,21 @@ export as a `.p12` with a password, then base64-encode it for a GitHub secret.
 
 ### 3. Sign the build
 
-`project.yml` already turns on the hardened runtime (required for
-notarization) for Release builds. Build with your Developer ID identity
-instead of the ad-hoc `-`:
+Build with your Developer ID identity instead of the ad-hoc `-`, with the
+hardened runtime on (required for notarization):
 
 ```sh
 xcodebuild -project Yankit.xcodeproj -scheme Yankit -configuration Release \
   -derivedDataPath build \
   DEVELOPMENT_TEAM=YOURTEAMID \
   CODE_SIGN_IDENTITY="Developer ID Application: Your Name (YOURTEAMID)" \
+  ENABLE_HARDENED_RUNTIME=YES \
   build
 ```
+
+Only turn the hardened runtime on for Developer ID builds. It enforces library
+validation, so an ad-hoc build with it can't load the embedded
+Sparkle.framework and quits at launch (this is what broke 1.4.0).
 
 Sparkle's helpers ship signed by the Sparkle team, so re-sign them with your
 identity before notarizing. The release workflow does this in its
