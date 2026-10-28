@@ -33,7 +33,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.yankit.app
         # The app version: shown in Settings → About and used for releases.
         # Bump it before releasing (see docs/RELEASING.md).
-        MARKETING_VERSION: "1.4.1"
+        MARKETING_VERSION: "1.4.2"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Resources/Info.plist
