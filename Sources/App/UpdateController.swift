@@ -39,9 +39,10 @@ final class UpdateController {
     }
 }
 
-/// Where "Support Yankit" points: the website's support section, which
-/// lists the supporter download and the tip jars. Keeping the real links
-/// on the website means they can change without shipping a new build.
+/// Where the About tab's "Support Yankit" link points: the website's
+/// support section, which lists the supporter download and the tip jars.
+/// Keeping the real links on the website means they can change without
+/// shipping a new build.
 enum SupportLinks {
     static let support = URL(string: "https://abyabyss.github.io/Yankit#support")!
 }

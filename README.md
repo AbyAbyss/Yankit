@@ -225,7 +225,7 @@ If it saves you time, a coffee keeps the updates coming:
 </p>
 
 Starring the repo, reporting bugs and telling a friend help just as much.
-**Support Yankit…** in the menu-bar menu opens the
+**Support Yankit** in Settings → About opens the
 [support page](https://abyabyss.github.io/Yankit#support).
 
 ## Roadmap

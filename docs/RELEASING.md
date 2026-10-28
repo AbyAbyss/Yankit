@@ -199,8 +199,8 @@ convenience and to support the project:
    download)": pay what you want, suggested $5. Attach the release DMG, or
    link to the latest release so the file never goes stale.
 2. Add the product link, plus Buy Me a Coffee and GitHub Sponsors if you
-   use them, to the `#support` section of the website. The app's
-   **Support Yankit…** menu item and About link open that section, so the
+   use them, to the `#support` section of the website. The
+   **Support Yankit** link in Settings → About opens that section, so the
    links can change without a new build.
 3. If you add GitHub Sponsors, list it in `.github/FUNDING.yml` to get the
    **Sponsor** button on the repository.

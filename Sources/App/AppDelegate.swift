@@ -83,9 +83,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menuBar.onCheckForUpdates = {
                 UpdateController.shared.checkForUpdates()
             }
-            menuBar.onSupport = {
-                NSWorkspace.shared.open(SupportLinks.support)
-            }
 
             let pauseController = PauseController(preferences: preferences)
             pauseController.onPauseStateChanged = { [weak menuBar] paused in
