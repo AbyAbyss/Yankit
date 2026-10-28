@@ -42,7 +42,7 @@ targets:
         # The EdDSA public key that update archives are checked against.
         # Paste the key printed by Sparkle's generate_keys here (see
         # docs/RELEASING.md). While empty, the build has no updater.
-        SPARKLE_PUBLIC_KEY: ""
+        SPARKLE_PUBLIC_KEY: "fHu+dsMu8HEriacv3AlFWYjU5qDvFM0AGGtwCrFI3PY="
       configs:
         # Required for notarization. Release only, so Debug test runs can
         # still load the test bundle into the app.
