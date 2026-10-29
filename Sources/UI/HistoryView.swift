@@ -365,6 +365,9 @@ struct HistoryView: View {
             hint("pin", keys: "⌘P")
             hint("move", keys: "⌘M")
             hint("delete", keys: "⌘⌫")
+            if isWide {
+                hint("preview", keys: "⌘Y")
+            }
             Spacer(minLength: 0)
             if isWide {
                 HStack(spacing: 7) {

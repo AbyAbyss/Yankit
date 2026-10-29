@@ -135,6 +135,23 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
         )
     }
 
+    /// Resizes the open panel for the preview pane setting, keeping its center.
+    private func resizePanel(_ panel: NSPanel) {
+        let size = preferences.showPreviewPane
+            ? HistoryView.wideSize : HistoryView.compactSize
+        let frame = panel.frame
+        panel.setFrame(
+            NSRect(
+                x: frame.midX - size.width / 2,
+                y: frame.midY - size.height / 2,
+                width: size.width,
+                height: size.height
+            ),
+            display: true
+        )
+        panel.invalidateShadow()
+    }
+
     /// Opens the "Move to Category" menu beside the selected row: the
     /// categories with their colors (choosing the checked one takes the item
     /// out of it, matching the row's context menu), then "New Category…".
@@ -278,6 +295,9 @@ final class HistoryPanelController: NSObject, NSWindowDelegate {
             viewModel.overlay = .categoryEditor(nil, moveItemID: nil)
         case 40 where command:          // ⌘K
             viewModel.requestSearchFocus()
+        case 16 where command:          // ⌘Y: toggle the preview pane
+            preferences.showPreviewPane.toggle()
+            if let panel { resizePanel(panel) }
         default:
             return event
         }

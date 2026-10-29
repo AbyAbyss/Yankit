@@ -132,6 +132,7 @@ pastes. With it off — the default — a single click pastes, just like before.
 | <kbd>⌘</kbd> <kbd>M</kbd> | Move to a category |
 | <kbd>⌘</kbd> <kbd>N</kbd> | New category |
 | <kbd>⌘</kbd> <kbd>K</kbd> | Focus search |
+| <kbd>⌘</kbd> <kbd>Y</kbd> | Show / hide the preview pane |
 | <kbd>⌘</kbd> <kbd>⌫</kbd> | Delete the selected item |
 | hold <kbd>⌥</kbd> | Peek at a sensitive item (preview pane) |
 | <kbd>Esc</kbd> | Dismiss the panel |

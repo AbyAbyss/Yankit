@@ -371,7 +371,8 @@ Keys:
 - `⌘1`–`⌘9` paste the Nth visible item.
 - **Esc** closes an open card, else dismisses the panel.
 - `⌘P` pins or unpins; `⌘L` labels; `⌘M` opens *Move to Category* beside the
-  selected row; `⌘N` creates a category; `⌘⌫` deletes; `⌘K` focuses search.
+  selected row; `⌘N` creates a category; `⌘⌫` deletes; `⌘K` focuses search;
+  `⌘Y` shows or hides the preview pane.
 - `⇥` / `⇧⇥` switch chips; holding `⌥` peeks at a sensitive item.
 
 ### 8.3 Settings window — `SettingsView`
